@@ -1,1 +1,1 @@
-# nottu-notes
+Notas de varias materias de la maestría en ciencias con especialidad en computación en CIMT
