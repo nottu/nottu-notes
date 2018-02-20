@@ -5,3 +5,9 @@ Imágenes/info/
 Imágenes/output_*
 */.ipynb_checkpoints
 .ipynb_checkpoints/t1_patrones-checkpoint.ipynb
+*.pyc
+*.tif
+*.gif
+*.png
+*.jpg
+*.7z
