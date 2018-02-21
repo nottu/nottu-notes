@@ -11,3 +11,4 @@ Imágenes/output_*
 *.png
 *.jpg
 *.7z
+.ipynb_checkpoints/MorphologicalOp-checkpoint.ipynb

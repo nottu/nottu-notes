@@ -1,0 +1,104 @@
+\documentclass{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{listings}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{multicol}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{helvet}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\familydefault}{\sfdefault}
+\graphicspath{ {./} }
+
+\title {Optimización Tarea 3}
+  \author {Francisco Javier Peralta Ramírez}
+  \date{\vspace{-2ex}}
+
+\begin{document}
+\maketitle
+
+\begin{enumerate}
+\item Escribe la expansión de Taylor de segundo orden para
+$$f(\boldsymbol{x}) = 100(x_2-x_1^2)^2 + (1 - x_1)^2 \qquad \boldsymbol{x} in \mathbb{R}^2$$
+\begin{enumerate}
+\item La expansión de Taylor de segundo orden para variables multidimensionales se escribe como
+$$f(\boldsymbol{x}) \approx f(\boldsymbol{a}) + Df(\boldsymbol{a})(\boldsymbol{x - a}) + \frac{1}{2}Hf(\boldsymbol{a})(\boldsymbol{x - a})$$
+Donde $Hf(\boldsymbol{a}) = DDf(\boldsymbol{a}).$ es decir la \emph{matriz Hessiana}.
+\item En el caso de nuestra función, podemos calcular la primera derivada y el Hessiano
+
+$$
+Df(\boldsymbol{x})= 
+ \begin{pmatrix}
+  400(x_2 - x_1^2)x_1 + 2(1 - x_1) &
+  200(x_2 - x_1^2)\\
+ \end{pmatrix}
+$$
+
+$$
+Hf(\boldsymbol{x})= 
+ \begin{pmatrix}
+  400 x_2 - 600x_1^2 - 2 && 400x_1\\
+  400x_1 & 200\\
+ \end{pmatrix}
+$$
+
+Ahora podemos substituir en la formula anterior 
+
+$$f(\boldsymbol{x}) \approx f(\boldsymbol{a}) + \begin{pmatrix}
+  400(a_2 - a_1^2)a_1 + 2(1 - a_1) \\
+  200(a_2 - a_1^2)\\
+ \end{pmatrix}^T
+ \begin{pmatrix}
+  x_1 - a_1\\
+  x_2 - a_2\\
+ \end{pmatrix} + \frac{1}{2} \begin{pmatrix}
+  400 x_2 - 600x_1^2 - 2 && 400x_1\\
+  400x_1 & 200\\
+ \end{pmatrix}\begin{pmatrix}
+  x_1 - a_1\\
+  x_2 - a_2\\
+ \end{pmatrix}$$
+
+\end{enumerate}
+\item Supngamos que observamos $m$ valores de una función $g$ en los puntos $x_1, x_2, \cdots , x_m$ por lo que conocemos los valores de $g(x_1), g(x_2), \cdots , g(x_m)$. Queremos aproximar la función $g(\cdot) : \mathbb{R} \rightarrow \mathbb{R}$ por un polinomio
+$$h_n(x) = a_0 + a_1x + a_2x^2 + \cdots + a_nx^n$$
+con $n < m$
+
+\begin{enumerate}
+  \item Genera observaciones del modelo
+  $$g(x) = \frac{sin(x)}{x} + \eta \qquad x \in [0.1, 10]$$
+  Donde $\eta \sim \mathcal{N}(0, 0.1) 0.1=x_1 <x_2 <\cdots<x_m =10.$
+  \item Aproxima $g(\cdot)$ por $h_n(x)$ para $n = 2, \cdots, 5$
+  \item Grafica en la misma gráfica $h_n(x)$ para $n = 2, \cdots, 5$ y ${x_i, g(x_i)}, i = 1, 2, \cdots, m$
+\end{enumerate}
+
+\newpage
+\item Dada una $f(x)$ continua en $[a, b]$ encuentra el polinomio de aproximación de grado n 
+$$p_n(x) = a_0 + a_1x + a_2x^2 + \cdots + a_nx^n$$
+que minimiza
+$$\int\limits_a^b[f(x) - p(x)]^2 dx$$
+
+\item Para la distribución normal $\mathcal{N}(\mu, \sigma^2)$ que tiene una función de densidad de probabilidad 
+
+$$f(x | \mu, \sigma^2) = \frac{1}{\sqrt{2\pi\sigma^2}}exp\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)$$
+
+La función de desindad de probabilidad correspondiente para una muestra $\{x_i\}_{i=1}^n$ de n variables independientes e identicamente distribuidas es (verosimilitud):
+$$\mathcal{L}(\mu, \sigma^2; x) = f(x_1, x_2, \cdots, x_n | \mu,\sigma^2) = \prod_{i=1}^{n}f(x_i| \mu,\sigma^2)$$
+
+Con $x = x_1, x_2, \cdots, x_n$. Calcula
+$$(\mu^*, \sigma^*) = arg \max_{\mu, \sigma} \mathcal{L}(\mu, \sigma^2; x)$$
+\begin{enumerate}
+\item Suponga que $f : \mathbb{R} \rightarrow \mathbb{R}$ es convexa y $a, b \in dom f$ con $a < b$. Muestra que 
+$$ a(f(x) - f(b)) + x(f(b) - f(a)) + b(f(a) - f(x)) \geq 0 \qquad \forall x \in [a, b]$$
+
+\item Suponga que $f : \mathbb{R}^n \rightarrow \mathbb{R}$ es convexa con $\boldsymbol{A} \in \mathbb{R}^{n\times m}$ y $\boldsymbol{b} \in \mathbb{R}^n$. Muestra que la función $g: \mathbb{R}^m \rightarrow \mathbb{R}$ definida por $g(\boldsymbol{x}) = f(\boldsymbol{Ax}+\boldsymbol{b})$, con $dom \,g = \{x |\boldsymbol{Ax}+\boldsymbol{b} \in dom \,f\}$, es convexa.
+\end{enumerate}
+
+\end{enumerate}
+
+\end{document}
