@@ -1,0 +1,366 @@
+\documentclass{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{listings}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{multicol}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{helvet}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage{listings}             % Include the listings-package
+
+\decimalpoint
+\graphicspath{ {./} }
+
+\title {Tarea 2, Reconocimiento de Patrones}
+  \author {Francisco Javier Peralta Ramírez}
+  \date{\vspace{-2ex}}
+
+\begin{document}
+\vspace{-2ex}
+\maketitle
+\begin{enumerate}
+\item Verifica que para la entropía de Shannon:
+$$ H(X) - E_Y[H(X|Y)] = H(Y) - E_X[H(Y|X)]$$
+
+es decir, la información mutua es simétrica en $X$ y $Y$.
+
+Tomando en cuenta la definición de la entropía de Shannon como:
+
+$$ H(X) = E[- logP(X)]$$
+
+Y recordamos el teorema de Bayes
+
+$$ P(X|Y) = \frac{P(Y | X) P(X)}{P(Y)} $$
+
+\begin{align*} 
+H(X) - E_Y[H(X|Y)] &= H(X) - E_YE_X(-log(P(X|Y))) \\
+&= H(X) - E_YE_X(log[P(Y|X)P(X)/P(Y)]) \\
+&= H(X) - E_YE_X(log[P(Y)] - log[P(Y|X)] - log[P(X)]) \\
+&= H(X) - E_Y[E_Xlog[P(Y)]) - E_X(log[P(Y|X)]) - E_X(log[P(X)])] \\
+&= H(X) - E_Y(log[P(Y)] + E_YE_X(log[P(Y|X)]) - E_YH(X) \\
+&= H(X) + H(Y) - H(Y|X) - H(X) \\
+&= H(Y) - H(Y|X)
+\end{align*}
+
+\item Verifica que si $X$ y $Y$ son independientes, $Kurt(X) = Kurt(Y), \,\,||\alpha|| = 1$
+
+\begin{center}
+$Kurt(\alpha_1X + \alpha_2Y )$ es máxima en $|\alpha1| = 1, \alpha2 = 0$ ó $|\alpha2| = 1, \alpha1 = 0$
+\end{center}
+
+Recordamos la definición de Kurtosis $Kurt(X)= E(X - EX)^4 - 3Var(X)^2$, y las propiedades de la varianza $Var(aX + bY) = a^2Var(X) + b^2Var(Y)$ cuando $X$ y $Y$ son independientes.
+
+\begin{align*} 
+Kurt(\alpha_1X + \alpha_2Y ) &= E((\alpha_1X + \alpha_2Y) - E(\alpha_1X + \alpha_2Y))^4 - 3[Var(\alpha_1X + \alpha_2Y)]^2 \\
+&= E(\alpha_1X + \alpha_2Y - \alpha_1EX - \alpha_2EY)^4 - 3[Var(\alpha_1X + \alpha_2Y)]^2 \\
+&= E(\alpha_1(X - EX) + \alpha_2(Y  - EY))^4 - 3[Var(\alpha_1X + \alpha_2Y)]^2\\
+&= E(\alpha_1(X - EX) + \alpha_2(Y  - EY))^4 - 3[\alpha_1^2Var(X) + \alpha_2^2Var(Y)]^2\\
+&= E[\alpha_1(X - EX)]^4 +
+4E[\alpha_1(X - EX)]^3[\alpha_2(Y  - EY)] + 
+6E[\alpha_1(X - EX)]^2[\alpha_2(Y  - EY)]^2\\
+&+4E[\alpha_1(X - EX)][\alpha_2(Y  - EY)]^3
++ [\alpha_2(Y  - EY)]^4) - 3[\alpha_1^2Var(X) + \alpha_2^2Var(Y)]^2
+\end{align*}
+
+Derivamos con respecto $\alpha_1$ y $\alpha_2$ y recordamos que $E(X-EX) = 0$
+
+\begin{align*}
+\frac{\delta}{\delta\alpha_1} &= 4\alpha_1^3E(X-EX)^4 + 12\alpha_1^2\alpha_2E[(X-EX)^3(Y-EY)] + 6\alpha_1\alpha_2^2E[(X-EX)^2(Y-EY)^2] \\
+&+ 4\alpha_2^3E[(X-EX)(Y-EY)^3] - 12[\alpha_1^2Var(X) + \alpha_2^2Var(Y)]\alpha_1Var(X)\\
+&= 4\alpha_1^3[E(X-EX)^4 - 3Var(X)^2] + 12\alpha_1^2\alpha_2E(X-EX)^3E(Y-EY)\\ 
+&+ 6\alpha_1\alpha_2^2[E(X-EX)^2E(Y-EY)^2 - 2Var(Y)Var(X)] + 4\alpha_2^3E(X-EX)E(Y-EY)^3\\
+&= 4\alpha_1^3Kurt(X) + 6\alpha_1\alpha_2^2[Var(X)Var(Y) - 2Var(X)Var(Y)]\\
+&= 4\alpha_1^3Kurt(X) -12 \alpha_1\alpha_2^2Var(X)Var(Y)
+% \frac{\delta}{\delta\alpha_1} &= 4E(\alpha_1(X - EX) + \alpha_2(Y  - EY))^3E(X - EX) - 6[\alpha_1^2Var(X) + \alpha_2^2Var(Y)]^2\alpha_1Var(X) = 0 \\
+% \frac{\delta}{\delta\alpha_2} &= 4E(\alpha_1(X - EX) + \alpha_2(Y  - EY))^3E(Y - EY) - 6[\alpha_1^2Var(X) + \alpha_2^2Var(Y)]^2\alpha_2Var(Y) = 0 \\
+\end{align*}
+
+\begin{align*}
+\frac{\delta}{\delta\alpha_2} &= 4\alpha_1^3E(Y-EY)^4 + 12\alpha_1^2\alpha_2E[(Y-EY)^3(X-EX)] + 6\alpha_2\alpha_1^2E[(Y-EY)^2(X-EX)^2] \\
+&+ 4\alpha_1^3E[(Y-EY)(X-EX)^3] - 12[\alpha_2^2Var(Y) + \alpha_1^2Var(X)]\alpha_2Var(Y)\\
+&= 4\alpha_2^3[E(Y-EY)^4 - 3Var(Y)^2] + 12\alpha_2^2\alpha_1E(Y-EY)^3E(X-EX)\\ 
+&+ 6\alpha_2\alpha_1^2[E(Y-EY)^2E(X-EX)^2 - 2Var(X)Var(Y)] + 4\alpha_1^3E(Y-EY)E(X-EX)^3\\
+&= 4\alpha_2^3Kurt(Y) + 6\alpha_2\alpha_1^2[Var(Y)Var(X) - 2Var(Y)Var(X)]\\
+&= 4\alpha_2^3Kurt(Y) -12 \alpha_2\alpha_1^2Var(Y)Var(X)
+\end{align*}
+
+Igualamos para encontrar la solución, llamemos $Kurt(X)$, $Kurt(Y)$ como $\boldsymbol{K}$
+
+\begin{align*}
+4\alpha_1^3\boldsymbol{K} - 12\alpha_1\alpha_2^2Var(X)Var(Y) &= 4\alpha_2^3\boldsymbol{K} - 12\alpha_2\alpha_1^2Var(X)Var(Y)\\
+4\alpha_1^3\alpha_2^3\boldsymbol{K} - 12\alpha_1\alpha_2^5Var(X)Var(Y) &= 4\alpha_2^3\alpha_1^3\boldsymbol{K} - 12\alpha_2\alpha_1^5Var(X)Var(Y)\\
+\alpha_1\alpha_2^5 &= \alpha_2\alpha_1^5\\
+\alpha_1\alpha_2(\alpha_2^4 - \alpha_1^4) &=0
+\end{align*}
+
+Obtenemos los puntos (1, 0), (0, 1), (-1, 0), (0, -1), (1/2, 1/2), (-1/2, 1/2), (1/2, -1/2) y (-1/2, -1/2). Para asegurar si son minimos o máximos tomamos las segundas derivadas parciales
+
+\begin{align*}
+\frac{\delta}{\delta\alpha_1^2} &= 12\alpha_1^2Kurt(X) -12\alpha_2^2Var(X)Var(Y)\\
+\frac{\delta}{\delta\alpha_1\alpha_2} &= -24\alpha_1\alpha_2Var(X)Var(Y)\\
+\frac{\delta}{\delta\alpha_2^2} &= 12\alpha_2^2Kurt(Y) -12\alpha_1^2Var(X)Var(Y)
+\end{align*}
+
+Evaluamos la matriz Hessiana en cada punto
+
+$$
+\nabla^2 Kurt(0X + Y )) =
+ \begin{pmatrix}
+  -12Var(X)Var(Y) & 0\\
+  0 & 12Kurt(Y)\\
+ \end{pmatrix}
+ \rightarrow definida \,\, neg \rightarrow max
+$$
+
+$$
+\nabla^2 Kurt(0X - Y )) =
+ \begin{pmatrix}
+  -12Var(X)Var(Y) & 0\\
+  0 & 12Kurt(Y)\\
+ \end{pmatrix}
+ \rightarrow definida \,\, neg \rightarrow max
+$$
+
+$$
+\nabla^2 Kurt(X + 0Y )) =
+ \begin{pmatrix}
+  12Kurt(X) & 0\\
+  0 & -12Var(X)Var(Y)\\
+ \end{pmatrix}
+ \rightarrow definida \,\, neg \rightarrow max
+$$
+
+$$
+\nabla^2 Kurt(-X + 0Y )) =
+ \begin{pmatrix}
+  12Kurt(X) & 0\\
+  0 & -12Var(X)Var(Y)\\
+ \end{pmatrix}
+ \rightarrow definida \,\, neg \rightarrow max
+$$
+
+$$
+\nabla^2 Kurt(X/2 + Y/2 )) =
+ \begin{pmatrix}
+  3[Kurt(X) - Var(X)Var(Y)] & -6Var(X)Var(Y)\\
+  -6Var(X)Var(Y) & 3[Kurt(Y) - Var(X)Var(Y)]\\
+ \end{pmatrix} \rightarrow min \,\, o \,\, silla
+$$
+
+\item Tomando una suma de $n$ variables aleatorias de cierta distribución, podemos ver el comportamiento de su Kurtosis y Negentropía. Dado que la Negentropía y la Kurtosis miden la ``no gaussianindad'', esperaríamos ver que ambos valores decrementan conforme se incrementa el número de variables. Se creó una app en \emph{Shiny} y se utilizaron los paquetes de \emph{moments} y \emph{entropy}. La función \emph{kurtosis} regresa el valor $Kurt_N = \frac{E(X-EX)^4}{Var(X)^2}$ por lo que el mínimo se encuentra en $Kurt_N = 3$. 
+
+Los resultados que se pueden ver es que la Negentropía decrementa hasta llegar casi a cero, si el número de variables aleatorias fuerna infinito este llegaría por completo a cero. Lo mismo pasa con la Kurtosis, pero el valor se acerca cada vez más a 3. Esto es independiente de la distribución original, se probó con una distribución uniforme, exponencíal y normal. La normal al ya ser normal tiene valores más cercanos a los minimos.
+
+\begin{lstlisting}[frame=single]  % Start your code-block
+library(shiny)
+library(moments)
+library(entropy)
+dists <- c('Uniforme', 'Normal', 'Exponential')
+ui <- fluidPage(
+  titlePanel('Kurtosis y Negentropía'),
+  sidebarPanel(
+    selectInput('xcol', 'Distribucion X', dists),
+    numericInput("nvars", "Número de Variables", 1, min=1, max=1000, step=1),
+
+    tags$hr(),
+    textOutput('kurt'),
+    textOutput('negentropia')
+    ),
+  mainPanel(
+    plotOutput('plot1')
+    )
+  )
+server <- function(input, output) {
+  nv = 100
+  xdist <- reactive({
+    y <- seq(0, 0, length=nv)
+    switch( input$xcol,
+      "Normal" = {
+        for (i in 1:input$nvars) 
+          y = y + rnorm(nv)
+      },
+      "Exponential" = {
+        for (i in 1:input$nvars) 
+          y = y + rexp(nv)
+      },
+      "Uniforme" = {
+        for (i in 1:input$nvars) 
+          y = y + runif(nv)
+      }
+      )
+    return(y/input$nvars)
+  })
+  output$plot1 <- renderPlot({
+    xvals <-xdist()
+    hist(xvals, freq = TRUE, breaks=nv/10)
+  })
+  output$kurt <- renderText({
+    xvals <-xdist()
+    sprintf("Kurtosis %0.5g", kurtosis(xvals))
+  })
+  output$negentropia <- renderText({
+    xvals <-xdist()
+    v = var(xvals)
+    m = mean(xvals)
+    n = rnorm(nv, mean=m, sd=sqrt(v))
+    e = entropy(n) - entropy(xvals)
+    sprintf("Negentropia %0.5g", e)
+  })
+}
+shinyApp(ui = ui, server = server)
+
+\end{lstlisting}
+
+\newpage
+\begin{figure}[ht]
+  \centering
+  \begin{subfigure}[b]{0.4\linewidth}
+      \centering
+      \includegraphics[width=1\textwidth]{kumax.png}
+      \caption{Suma de 1000 v.a Unif}
+      \label{fig:x2f1}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.4\linewidth}
+      \centering
+      \includegraphics[width=1\textwidth]{kumin.png}
+      \caption{Una v.a Unif}
+      \label{fig:y2h1}
+  \end{subfigure}
+\end{figure}
+
+
+% \begin{figure}[ht]
+% \centering
+% \includegraphics[width=200pt]{e3.png}
+% \end{figure}
+% \newpage
+
+\item Supongamos que $Y$ es una transformación lineal de $X$, es decir, existe una matrix $M$ tal que $Y = MX$. Si $X$ y $Y$ son v.a. continuas y $M$ invertible, verifica que $H(Y) = H(X) + log(|det(M)|)$
+
+\begin{align*}
+H(Y) &= E[-logP(Y)] = E[-logP(MX)] \\
+\end{align*}
+
+Si $Y$ es una transformación de $X$, $Y = h(X)$
+
+\begin{align*}f_Y(y) = \frac{f(x)\delta x}{|h'(x)|\delta x} = \frac{f_X(h^{-1}(y))}{|h'(h^{-1}(y))|}\end{align*}
+
+La densidad de $Y = (y_1, y_2, \cdots, y_n)$ puede ser calculada como
+
+\begin{align*}f_Y(y_1, y_2, \cdots, y_n) = \frac{1}{|\frac{\delta(y_1, \cdots, y_n)}{\delta(x_1, \cdots, x_n)}|}f_X(h^{-1}(x_1, x_2, \cdots, x_n))\end{align*}
+
+
+En este caso, como $Y$ es una transformación lineal de $X$.
+
+\begin{align*}f_Y(Y) = f_Y(y_1, y_2, \cdots, y_n) = \frac{1}{|det\,M|}f_X(M^{-1}(x_1, x_2, \cdots, x_n))\end{align*}
+
+Y tomando en cuenta $f_Y (y_1,\cdots,y_n)\delta(y1,\cdots,y_n) = fX(x1,\cdots,x_n)\delta(x1,\cdots,x_n)$
+
+Con estas propiedades en cuenta, observamos
+
+\begin{align*}
+H(Y) &= E[-logP(Y)] = E[-logP(MX)]\\
+H(Y) &= -\int log[f_Y(Y)] f_Y(Y)\delta y\\
+&= -\int log\left (\frac{f_X(M^{-1}Y)}{|det\,M|}\right )\frac{f_X(M^{-1}Y)}{|det\,M|}\delta y\\
+&= -\int (log[f_X(M^{-1}Y)] - log|det\,M| )\frac{f_X(M^{-1}Y)}{|det\,M|}\delta y \\
+&= -\int log[f_X(X)]f_X(X)\delta x + \int log|det\,M| f_X(X) \delta x\\
+&= H(X) + log|det\,M|\int f_X(X) \delta x = H(X) + log(|det\, M|)\\
+\end{align*}
+
+\newpage
+\item Tomando los datos del world report happiness de la ONU del 2017. Para los valores no existentes, llenamos con el promedio sobre la columna del valor y eliminando las columnas que sólo tienen `NA'
+
+Primero hacemos análisis de componente preincipal. Notamos de forma rápida que PCA probablemente no es el mejor camino, ya que requerimos de muchos compoentes para llegar a proporción de varianza aceptable ($ \geq 0.95$)
+
+\includegraphics[width=0.8\textwidth]{PCSum.png}
+
+Aprovechando que tenemos estos resultados podemos graficar el biplot sobre los dos primeros componentes principales, aun que estos sólo cuentan con el 47\% de la varianza total, quizá podemos comenzar a ver ciertos patrones.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.45\textwidth]{happiness2pc.png}
+\end{figure}
+
+En general parecería la grágfica tiene algo de sentido, pero se puede interpretar que paises como China tienen niveles de felicidad muy altos, lo cual no va del todo con nuestra percepción del país. Por otra parte se ve que muchos paises latino americanos están en la parte baja de la gráfica, y considerando la situación es varios de estos paises es de esperarse. Al mismo tiempo podemos ver que algunas variables tienen sentido en como afectan a la felicidad. Altos niveles de percepción de corrupción están ligados a una posición baja en la gráfica mientras que confianza en el govierno y libertad de elecciones de vida van de la mano con una posición alta en la gráfica. 
+
+Podemos ordenar los datos sobre el primer componente princial y graficar sólamente la primera componente principal vs pais. Esto nos daría una idea de los paises más felices.
+\newpage
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.45\textwidth]{happiest.png}
+\end{figure}
+
+Dado que los primeros dos componentes principales sólo represetan el 45\% de la varianza no es muy bueno tratar de interpretar los resultados.
+
+Usando Self-Organizing Maps, podríamos tener una mejor idea de la similitud entre los datos. SOM nos permite reducir la dimensión creando \emph{cubetas} donde ponemos los datos más similares entre si, y estas \emph{cubetas} están cercanas dependiendo de la similitud entre ellas. Puede haber varias \emph{cubetas} vacias, lo que nos permite ver más claramemte separaciones en los datos. Con SOM no podemos obtener información de que paises son más felices, pero sí sobre su similitud.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.45\textwidth]{som.png}
+\end{figure}
+
+Podemos ver que hay grupos de paises erupeos, latinos y africanos. Interesantemente SOM al igual que PCA pone muy cerca a Noruega y USA de China. Esto otra vez contradice la precepsión que se tiene de los paises, pero nos indica que posiblemente son más similares, en cuanto a felicadad de los ciudadanos, a lo que pensabamos. Es bastante interesante que Alemania y Singapore se encuentren en el mismo bloque aun cuando los paises son económicamente hablando, completamente diferentes. Otra vez, podemos probar con otro método de reducción de dimensión para comprobar los resultados y tener una aún mejor idea de lo que está pasando.
+
+Con ISOMAP se genra un grafo donde sólo están conectados los datos más similates entre si. Generamos la gráfica y podemos ver que nuevamente los paieses que esperaríamos que esten cercanos, lo están. Y esta vez China aparece lejano a Noruega y Suecia, lo que nos indica que no es del todo tan similar como los otros métodos nos podrían hacer pensar.
+
+\newpage
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.45\textwidth]{isomap.png}
+\end{figure}
+
+Como vimos, cada método nos dio una visualización muy diferente que se pueden interpretar de muchas formas. Es dificil saber cual es más correcta, pero los datos que se mantuvieron similares nos indican que estos verdaderamente son similares. Pasar los datos por multiples métodos nos puede ayudar a verificar patrones que creemos observar y al repetirse una tras otra vez nos aclaran que posiblemente existe una relación.
+
+\begin{lstlisting}[frame=single]  % Start your code-block
+library("gdata")
+require(kohonen)
+# Load Data
+data = read.xls('data.xlsx', sheet=1)
+data2016 = data[data[, 'year'] == 2016,][-1][-1][-1]
+rownames(data2016) <- data[data[, 'year'] == 2016,][,1]
+for(i in 1:ncol(data2016)){
+  data2016[is.na(data2016[,i]), i] <- mean(data2016[,i], na.rm = TRUE)
+}
+data2016 <- data2016[, colSums(is.na(data2016)) != nrow(data2016)]
+# PCA
+p <- prcomp(data2016, scale=TRUE) #remove country, country, year
+# plot(p$x[,1], p$x[,2], ylab="PC2", xlab='PC1')
+biplot(p, cex=0.5)
+px = p$x[order(p$x[,1], decreasing=TRUE),]
+par(oma=c(2,2,2,2))
+plot(head(px[,1],10), type='l', xaxt='n', ann=FALSE)
+axis(1,at=1:10, 
+  labels=head(rownames(px), 10), las=2, cex=0.2)
+
+data2016s <- scale(data2016)
+# SOM
+som1 <- som(data2016s, grid = somgrid(xdim = 11, ydim=11, topo="hexagonal"))
+# plot(som1, type="dist.neighbours")
+# plot(som1, type="codes")
+plot(som1, type = "mapping", main = "Mapping Type SOM", labels=rownames(data2016s),data=data2016s, cex=0.5, font=1)
+# ISOMAP
+# dis <- vegdist(data2016s)
+
+# ord <- isomap(dis, k = 3)
+# pl <- plot(ord, main="isomap k=3", pch=rownames(data2016s))
+dis <- dist(data2016s, method = "euclidean")
+ord <- isomap(dis, k = 3)
+pl <- plot(ord, main="isomap k=3", pch='.')
+a <- data.frame(pl$sites)
+text(a[,1], a[,2], labels=rownames(data2016s), cex=0.5)
+
+\end{lstlisting}
+
+\end{enumerate}
+\end{document}

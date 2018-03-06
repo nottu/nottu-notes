@@ -12,3 +12,12 @@ Imágenes/output_*
 *.jpg
 *.7z
 .ipynb_checkpoints/MorphologicalOp-checkpoint.ipynb
+.ipynb_checkpoints/Untitled-checkpoint.ipynb
+*.out
+*.fdb_latexmk
+*.fls
+*.log
+*.gz
+*.plist
+Opti/t4/t4.dSYM/Contents/Resources/DWARF/t4
+*.aux
