@@ -1,219 +1,133 @@
 #include <stdio.h>
-#include <float.h>
+#include <string.h>
 #include <math.h>
+
 #include "matrix.h"
+#include "optimization.h"
 
-double Rosenbrock(double *x, int n){
-  double aux=0;
-  double sum1=0, sum2=0;
-  for(int i=0;i<(n-1);i++){
-    sum1+=(x[i+1]-x[i]*x[i])*(x[i+1]-x[i]*x[i]);
-    sum2+=(1-x[i]*x[i])*(1-x[i]*x[i]);
-  }
-  aux=100*sum1 + sum2;
-  return(aux);
-}
-
-double* gRosenbrock(double *x, int n, double *out){
-  for(int i=1;i<(n-1);i++){
-    out[i]=-400*x[i]*(x[i+1]-x[i]*x[i])-2*(1-x[i])+200*(x[i]-x[i-1]*x[i-1]);
-  }
-  out[0]=-400*(x[1]-x[0]*x[0])*x[0]-2*(1-x[0]);
-  out[n-1]=200*(x[n-1]-x[n-2]*x[n-2]);
-  return out;
-}
-
-
-double** hRosenbrock(double *x, int n, double **out){
-  for(int i=1;i<(n-1);i++){
-    out[i][i]=202+1200*x[i]*x[i]-400*x[i+1];
-    out[i][i-1]=-400*x[i-1];
-    out[i-1][i]=-400*x[i-1];
-  }
-  out[0][0]=1200*x[0]*x[0]-400*x[1]+2;
-  out[n-1][n-1]=200; 
-  out[n-2][n-1]=-400*x[n-2];
-  out[n-1][n-2]=-400*x[n-2];
-  return out;
-}
-
-typedef enum step { StepFijo, StepAprox, StepHess} Step;
-
-typedef struct fncinfo {
-  double (*function)(double*, int n);
-  double* (*gradient)(double*, int n, double*);
-  double** (*hessian)(double*, int n, double**);
-} FuncInfo;
-
-double get_step_hess(FuncInfo info, double *x, int n, double *g){
-  double gtg = productoPunto(g, g, n);
-
-  double **h = allocMtx(n, n);
-  info.hessian(x, n, h);
-  
-  double *hg = (double*)malloc(sizeof(double) * n);
-  multMatrizVect(h, g, n, n, hg);
-  
-  double alp = gtg / productoPunto(g, hg, n);
-  
-  if(!isdefpos(h, n)) alp *= -1;
-  // makedefpos(h, n);
-
-  free(hg);
-  freeMtx(h);
-  return alp;
-}
-
-double get_step_approx(FuncInfo info, double *x, int n, double alp, double fdif, double* g){
-  double gtg = productoPunto(g, g, n);
-  alp = gtg * pow(alp, 2) / (2 * (fdif + alp*gtg) );
-  return alp;
-}
-
-double optimize_function(FuncInfo info, Step stp, double *x, int n, int iter, double tg, double tx, double tf){
-  double step = 0;
-  double *x1 = (double*)malloc(sizeof(double)*n);
-  double *dir = (double*)malloc(sizeof(double)*n);
-  double fdif = 0;
-  for (int i = 0; i < iter; ++i)
-  {
-    info.gradient(x, n, dir); //max increse, use negative step...
-    if(norma2Vect(dir, n) < tg){
-      break;
-    }
-    switch(stp){
-      case StepFijo:
-        step = 0.0001;
-        break;
-      case StepHess:
-        step = get_step_hess(info, x, n, dir);
-      case StepAprox:
-        if(i == 0) step = 0.0005;
-        else step = get_step_approx(info, x, n, step, fdif, dir);
-        break;
-      default:
-        break;
-    }
-    // normalizaVect(dir, n);
-    //printVect(x, 2);
-    vectorScalar(dir, step, n);
-    restaVector(x, dir, x1, n);
-    printf("%i, step %g, %g\n",i, step, info.function(x1, n));// printVect(x1, n);
-    double fx = info.function(x, n);
-    fdif = info.function(x1, n) - fx;
-    double dif = fabs(fdif);
-    dif /= fx > 1 ? fx : 1;
-    if( dif < tf ){
-      break;
-    }
-    double nx = norma2Vect(x, n);
-    restaVector(x, x1, x, n);
-    dif = norma2Vect(x, n);
-    dif /= nx > 1 ? nx : 1;
-
-    if( dif < tf ){
-      break;
-    }
-
-    double *xt = x;
-    x = x1;
-    x1 = xt;
-  }
-  free(dir);
-  return info.function(x1, n);
-}
-
-//rosembrock function evaluator
-//n should be at least = 2
-double rosembrock(double* x, int n){
-  double z = 0;
-  for (int i = 0; i < n - 1; ++i)
-  {
-    z += 100 * pow((x[i+1] - pow(x[i], 2)) , 2)  +  pow((1 - x[i]), 2);
-  }
-  return z;
-}
-//n should be at least = 2
-double* rosembrock_gradient(double* x, int n, double *g){
-  g[0] = -400 * (x[1] - pow(x[0], 2)) * x[0] - 2 * (1 - x[0]);
-  for (int i = 1; i < (n - 1); ++i)
-  {
-    g[i] =200*(x[i] - pow(x[i-1], 2)) - 400 * (x[i+1] - pow(x[i], 2)) * x[i] - 2 * (1 - x[i]);
-  }
-  g[n - 1] = 200 * (x[n-1] - pow(x[n-2], 2));
-  return g;
-}
-
-double** rosembrock_hessian(double* x, int n, double **h){
-  h[0][0] = -400*(x[1] - 3*pow(x[0], 2)) + 2;
-  h[0][1] = -400* x[0];
-  for (int i = 2; i < n; ++i) h[0][i] = 0;
-
-  for (int i = 1; i < n - 1; ++i)
-  {
-    for (int j = 0; j < i - 1; ++j) h[i][j] = 0;
-
-    h[i][i - 1] = -400* x[i - 1];
-    h[i][i] = 202 + 1200 * pow(x[i], 2) - 400 * x[i+1];
-    h[i][i + 1] = -400* x[i];
-
-    for (int j = i + 2; j < n; ++j) h[i][j] = 0;
-  }
-  for (int i = 0; i < n-2; ++i) h[n  - 1][i] = 0;
-  h[n - 1][n - 2] = -400 * x[n - 2];
-  h[n - 1][n - 1] = 200;
-
-  return h;
-}
-
-// wood's
-//keep signature of rosembrock
-double wood(double *x, int n){
-  double z = 100 * pow(pow(x[0], 2) - x[1], 2);
-  z += pow(x[0] - 1, 2) + pow(x[2] - 1, 2);
-  z += 90 * pow(pow(x[2], 2) - x[3], 2);
-  z += 10.1 * (pow(x[1] - 1, 2) + pow(x[3] - 1, 2));
-  z += 19.8 * (x[1] - 1) * (x[3] - 1);
-  return z;
-}
-
-double *wood_gradient(double *x, int n, double *g){
-  g[0] = 400 * (pow(x[0], 2) - x[1]) * x[0] + 2 * (x[0] - 1);
-  g[1] = -200 * (pow(x[0], 2) - x[1]) + 20.2 * (x[1] - 1) + 19.8 * (x[3] - 1);
-  g[2] = 2 * (x[2] - 1) + 360 * (pow(x[2], 2) - x[3]) * x[2];
-  g[3] = -180 * (pow(x[2], 2) - x[3]) + 20.2 * (x[3] - 1) + 19.8 * (x[1 - 1]);
-
-  return g;
-}
-
-double ** wood_hessian(double *x, int n, double **h){
-  cleanMtx(h, n, n); //zeros mtx
-  h[0][0] = 400 * (3 * pow(x[0], 2) - x[1]) + 2;
-  h[0][1] = -400 * x[0];
-  h[1][0] = -400 * x[0];
-
-  h[1][1] = 220.2;
-  h[1][3] = -19.8;
-  h[2][2] = 2 + 360 * (3 * pow(x[2], 2) - x[3]);
-  h[2][3] = -360*x[2];
-  h[3][3] = 200.2;
-  h[3][2] = -360*x[2];
-  h[3][1] = -19.8;
-  return h;
-}
-
-int main(int argc, char const *argv[]){
-
+void test_rosembrock(char* filename, int max_iter, double tg, double tx, double tf, Step step, double alpa_i){
+  //read from file...
   FuncInfo f;
+  f.function = rosembrock;
+  f.gradient = rosembrock_gradient;
+  f.hessian  = rosembrock_hessian;
+
   int n;
-  n = 2;
-  f.function = Rosenbrock;
-  f.gradient = gRosenbrock;
-  f.hessian  = hRosenbrock;
+
+  FILE *file = fopen(filename, "r");
+  fscanf(file, "%d", &n);
+  double *x = (double*)malloc(sizeof(double) * n);
+  for (int i = 0; i < n; ++i)
+  {
+    fscanf(file, "%lg", &x[i]);
+  }
+  fclose(file);
+  optimize_function(f, step, x, n, max_iter, tg, tx, tf, alpa_i);
+  free(x);
+}
+
+
+void test_wood(char* filename, int max_iter, double tg, double tx, double tf, Step step, double alpa_i){
+  //read from file...
+  FuncInfo f;
+  f.function = wood;
+  f.gradient = wood_gradient;
+  f.hessian  = wood_hessian;
+
+  int n;
+
+  FILE *file = fopen(filename, "r");
+  fscanf(file, "%d", &n);
+  if(n != 4){
+    printf("Invalid number of params for wood function\n");
+    return;
+  }
+  double *x = (double*)malloc(sizeof(double) * n);
+  for (int i = 0; i < n; ++i)
+  {
+    fscanf(file, "%lg", &x[i]);
+  }
+  fclose(file);
+  optimize_function(f, step, x, n, max_iter, tg, tx, tf, alpa_i);
+  free(x);
+}
+
+void test_smooth(char* filename, int max_iter, double tg, double tx, double tf, Step step, double alpa_i, double lambda){
+  //read from file...
+  FuncInfo f;
+  f.function = smoothing;
+  f.gradient = smoothing_gradient;
+  f.hessian  = smoothing_hessian;
+
+  int n;
+
+  FILE *file = fopen(filename, "r");
+  fscanf(file, "%d", &n);
+  //we read y, x into 'x' vector
+  double *x = (double*)malloc(sizeof(double) * (2*n+ 1));
+  for (int i = 0; i < n; ++i)
+  {
+    fscanf(file, "%lg", &x[n+i]);//y comes first
+  }
+  for (int i = 0; i < n; ++i)
+  {
+    fscanf(file, "%lg", &x[i]);//y comes first
+  }
+  x[2*n] = lambda;
+  fclose(file);
+  // printVect(x, n);
+  optimize_function(f, step, x, n, max_iter, tg, tx, tf, alpa_i);
+  free(x);
+}
+
+
+int main(int argc, char **argv){
+
+  if(argc < 10){
+    printf("t4 [rosenbrock | wood | smoothing] [StepFijo | StepHess | StepAprox] [filename] [maxiter] [tol_gradient] [tol_x] [tol_function] [initial_alpha] [lambda]\n");
+    return 1;
+  }
+  char *func_name = argv[1];
+  char *step_type = argv[2];
+  char *file_name = argv[3];
+
+  int max_iter = atoi(argv[4]);
+  double tol_g = atof(argv[5]);
+  double tol_x = atof(argv[6]);
+  double tol_f = atof(argv[7]);
+
+  double alp_i = atof(argv[8]);
+  double lambda = atof(argv[9]);
+
+  Step step = StepFijo;
+
+  if(strcmp(step_type, "StepAprox") == 0){
+    step = StepAprox;
+  } else if(strcmp(step_type, "StepHess") == 0){
+    step = StepHess;
+  } else if(strcmp(step_type, "StepFijo")){
+    printf("Tipo de paso %s no existe, se usara StepFijo\n", step_type);
+  }
+
+  if(strcmp(func_name, "rosenbrock") == 0){
+    test_rosembrock(file_name, max_iter, tol_g, tol_x, tol_f, step, alp_i);
+  }
+  else if(strcmp(func_name, "wood") == 0){
+    test_wood(file_name, max_iter, tol_g, tol_x, tol_f, step, alp_i);
+  }
+  else if(strcmp(func_name, "smoothing") == 0){
+    test_smooth(file_name, max_iter, tol_g, tol_x, tol_f, step, alp_i, lambda);
+  }
+
+
+  // ros 2
+  // n = 2;
   // f.function = rosembrock;
   // f.gradient = rosembrock_gradient;
   // f.hessian  = rosembrock_hessian;
-  double x[] = {-1.2, 1};
+  // double x[] = {-1.2, 1};
+
+  //ros 100
   // n = 100;
   // f.function = rosembrock;
   // f.gradient = rosembrock_gradient;
@@ -222,13 +136,15 @@ int main(int argc, char const *argv[]){
   // for (int i = 0; i < n; ++i) x[i] = 1;
   // x[0] = -1.2;
   // x[98] = -1.2;
+
+  //wood
   // n = 4;
   // f.function = wood;
   // f.gradient = wood_gradient;
   // f.hessian = wood_hessian;
   // double x[] = {-3, -1, -3, -1};
 
-  optimize_function(f, StepHess, x, n, 100000, 1e-6, 1e-12, 1e-12);
-
-  return 1;
+  // optimize_function(f, StepHess, x, n, 100000, 1e-6, 1e-10, 1e-12);
+  // test_rosembrock();
+  return 0;
 }
