@@ -49,7 +49,41 @@ $$
  \end{pmatrix}
 $$
 
+Para Rosembrock con $n = 2$ obtenemos los siguientes resultados:
+
+\begin{table}[h]
+\centering
+\label{ros2}
+\resizebox{8cm}{!}{
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\rowcolor[HTML]{EFEFEF} 
+Algoritmo     & \# iter & $|f(x) - f(x^*)|$ & $|\nabla f(x_k)|$ & $\alpha_0$ \\ \hline
+Backtracking  &  34439  &    1.221E-23      &    8.092E-11      & 1          \\ \hline
+Interpolación &  162067 &    1.212E-20      &    9.951E-11      & 0.01       \\ \hline
+\end{tabular}
+}
+\end{table}
+
+Para Rosembrock con $n = 100$ obtenemos los siguientes resultados:
+
+\begin{table}[h]
+\centering
+\label{ros100}
+\resizebox{8cm}{!}{
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\rowcolor[HTML]{EFEFEF} 
+Algoritmo     & \# iter & $|f(x) - f(x^*)|$ & $|\nabla f(x_k)|$ & $\alpha_0$ \\ \hline
+Backtracking  &  19302  &    3.98662        &    4.266E-05      & 1          \\ \hline
+Interpolación &  17048  &    3.98662        &    9.426E-06      & 0.01       \\ \hline
+\end{tabular}
+}
+\end{table}
+
+Podemos ver que ambos algoritmos convergen, aun que curisoamente para Rosembrock 100 ambos convergen más rapido y a un mínimo local. Para el punto dado, \emph{Backgracking} parece tener mejor desempeño ya que en $n = 2$ converge en casi 5 veces menos iteraciones pero en cuanto a tiempos \emph{Interpolación} gana. Para $n = 2$ los timepos son casi iguales, pero para $n = 100$ \emph{Interpolación} toma  0.192s mientras que \emph{Backtracking} toma 1.854s.
 \newpage
+
 \item Función de Wood
 \vspace{-1ex}
 \begin{align*} 
@@ -61,7 +95,114 @@ f(\boldsymbol{x}) &= 100(x_1^2-x_2)^2 +(x_1-1)^2+(x_3-1)^2\\
 f(\boldsymbol{x^*}) &= 0
 \end{align*}
 
+De igual manera en la tarea anterior vimos que el gradiente de está función es:
+$$
+ \begin{pmatrix}
+  400(x_1^2 - x_2)x_1 + 2(x_1 - 1) \\
+  -200(x_1^2 - x_2) + 20.2(x_2 - 1) + 19.8(x_4 - 1)\\
+  2(x_3 - 1) + 360(x_3^2 - x_4)x_3\\
+  -180(x_3^2 - x_4) + 20.2(x_4 - 1) + 19.8(x_2 - 1)
+ \end{pmatrix}
+$$
 \end{enumerate}
+
+\begin{table}[h]
+\centering
+\label{wood2}
+\resizebox{8cm}{!}{
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\rowcolor[HTML]{EFEFEF} 
+Algoritmo     & \# iter & $|f(x) - f(x^*)|$ & $|\nabla f(x_k)|$ & $\alpha_0$ \\ \hline
+Backtracking  &  18660  &    4.990E-23      &    9.901E-11      & 1          \\ \hline
+Interpolación & 34305708 &   6.078E-21      &    9.620E-11      & 0.05       \\ \hline
+\end{tabular}
+}
+\end{table}
+
+% \newpage
+\item Podemos obtener una función para clasificar números en una imágen de $28 \times 28$ y encontrar los parámetros que la minimizan. Dicha función está dada por:
+
+
+\begin{align*} 
+h(\boldsymbol{\beta}, \beta_0) &= \sum_{i=1}^{n}y_i \log\pi_i + (1 - y_i)\log(1 - \pi_i)\\
+\pi_i &:= \pi_i(\boldsymbol{\beta}, \beta_0)  = \frac{1}{1+exp(-\boldsymbol{x}_i^T\boldsymbol{\beta} - \beta_0)}\\
+\boldsymbol{\beta} &= [\beta_1, \beta_2, \cdots, \beta_{784}]
+\end{align*}
+Si calculamos su gradiente, podemos usar nuestro algoritmo de máxismo descenso con alguno de nuestros tipos de paso, preferentemente uno que no utilize el Hessiano, como \emph{backtracking}.
+
+Primero encontramos el gradiente de $\pi_i$ con respecto a $\beta_0, \beta_1, \cdots, \beta_{784}$
+
+\begin{align*} 
+\frac{\delta\pi_i}{\delta\beta_0} &= \frac{exp(-\boldsymbol{x}_i^T\boldsymbol{\beta}-\beta_0)}{[1 + exp(-\boldsymbol{x}_i^T\boldsymbol{\beta}-\beta_0)]^2}\\
+\frac{\delta\pi_i}{\delta\beta_j} &= \frac{x_{i,j}exp(-\boldsymbol{x}_i^T\boldsymbol{\beta}-\beta_0)}{[1 + exp(-\boldsymbol{x}_i^T\boldsymbol{\beta}-\beta_0)]^2}\\
+\end{align*}
+
+\newpage
+Luego encontramos el gradiente de la función $h$
+
+
+\begin{align*} 
+\frac{\delta h}{\delta\beta_0} &= \sum_{i=1}^{n}\frac{y_i exp(-\boldsymbol{x}_i^T\boldsymbol{\beta}-\beta_0) - (1-y_i)}{1 + exp(-\boldsymbol{x}_i^T\boldsymbol{\beta}-\beta_0)}\\
+\frac{\delta h}{\delta\beta_j} &= \sum_{i=1}^{n}\frac{y_ix_{i,j}exp(-\boldsymbol{x}_i^T\boldsymbol{\beta}-\beta_0) - x_{i,j}(1-y_i)}{[1 + exp(-\boldsymbol{x}_i^T\boldsymbol{\beta}-\beta_0)]^2}\\
+\end{align*}
+
+Podemos simplificar la formula usando $\pi_i$
+
+\begin{align*} 
+\frac{\delta h}{\delta\beta_0} &= \sum_{i=1}^{n}y_i(1 - \pi_i) + (y_i - 1)\pi_i\\
+&= \sum_{i=1}^{n}y_i- \pi_i\\
+\frac{\delta h}{\delta\beta_j} &= \sum_{i=1}^{n}x_{i, j}y_i(1 - \pi_i) + x_{i, j}(y_i - 1)\pi_i\\
+&= \sum_{i=1}^{n}x_{i,j}(y_i- \pi_i)\\
+\end{align*}
+
+Para utilizar los métodos aprendidos en clase, podemos tomar dos caminos, cambiar la confición de Armijo para asegurar ascenso suficiente o cambiar el problema a uno de minimización. Ya que se tienen muchos datos, se optó por usar un subconjunto de ellos, en este caso $1000$, es importante resaltar que son $1000$ datos de los números seleccionados y no de todos los disponibles, así que para el archivo de $50000$ datos, si estos están distribuidos uniformemente, tendríamos $5000$ por digito, lo que signigica que sólo usamos el $10\%$. Para hacer esto multiplicamos la función por $-1$ y el gradiente también. 
+
+Se probó con diferentes números, como se esperaría, con números similares tarda más en converger y tiene mayor error al hacer las pruebas.
+
+\begin{table}[h]
+\centering
+\label{nums}
+\resizebox{8cm}{!}{
+\begin{tabular}{|l|l|l|l|}
+\hline
+\rowcolor[HTML]{EFEFEF} 
+Números     & \# iter &   $f(x)$    & Error(test) \\ \hline
+0, 1        &  167    &  -8.461E-12 &  0.0008     \\ \hline
+0, 8        &  1674   &  -1.778E-05 &  0.0054     \\ \hline
+\end{tabular}
+}
+\end{table}
+
+\newpage
+Nuestro algoritmo de entrenamiento queda de la siguiente forma:
+
+\begin{algorithm}[H]
+\caption{trainNumbers}\label{train}
+\begin{algorithmic}[1]
+\Function{train\_number}{ydat, xdat, n1, n2, maxIter}
+  \For { y \textbf{in} ydat}
+    \If {y \textbf{is} n1 \textbf{or} n2}
+      \State x.append(readLine(xdat))
+    \Else
+      \State readLine(xdat) \Comment {Saltar linea}
+    \EndIf
+  \EndFor
+  \State beta := [1/748] * 748 \Comment{Inicializa con valores iguales}
+  \State ev = numer(beta, y, x)
+  \For { i \textbf{to} maxIter}
+    \State dir := number\_gradient(beta, y, x)
+    \State step := number\_step\_backtrack(dir, beta, y, x)
+    \State scaleVector(dir, step)
+    \State nev = numer(beta+dir, y, x)
+    \If {$|$ev - nev$|$ $<$ 1E-8}
+      \State break
+    \EndIf
+  \EndFor
+  \State \textbf{return} beta
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
 
 \end{enumerate}
 \end{document}
