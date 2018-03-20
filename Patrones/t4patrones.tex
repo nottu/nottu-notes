@@ -77,6 +77,10 @@ Usando la definición de las propiedades condicionales tenemos que $P(Y = y | X 
   \end{align*}
 \end{multicols}
 
+La probabilidad de cometer un error está dada por
+$$P(Y = 2 | X = 0)P(X = 0) + P(Y = 2 | X = 1)P(X = 1) + P(Y = 2 | X = 2)P(X = 2)$$
+en este caso, como sólo escojemos $Y = 1$ el error es $P(Y = 2) = 0.15 + 0.1 + 0.1 = 0.35$
+
 \item Deriva el clasificador Bayesiano Óptimo para el caso de dos clases y una funció de costo simétrica cuando:
   $$ P(X = x|Y = 1) \sim \mathcal{N}(\mu_1, \Sigma) \qquad P(X = x|Y = 2) \sim \mathcal{N}(\mu_2, \Sigma) $$
 y
