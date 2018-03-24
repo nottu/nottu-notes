@@ -92,6 +92,8 @@ double* luSolver(double **a, double *b, int nr, int nc){ //should move to anothe
   double* sol = lowerSol(l, b, nr, nc);
   double* sol2 = upperSol(u, sol, nr, nc);
   free(sol);
+  freeMatrix(l);
+  freeMatrix(u);
   return sol2;
 }
 //same as lu factor, but in 1 matrix

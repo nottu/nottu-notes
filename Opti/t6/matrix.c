@@ -93,3 +93,8 @@ void printMatrix(double**a, int nr, int nc){
     printVector(a[i], nc);
   }
 }
+
+void copyMatrix(double **a, double** c, int nr, int nc){
+  for (int i = 0; i < nr; ++i)
+    copyVector(a[i], c[i], nc);
+}

@@ -53,9 +53,9 @@ double** digitEstimator_hessian(double *x , int n, double **h);
 double cuadraticSolver(double a, double b, double c);
 
 //dogleg
-double cauchy_point(FuncInfo info, double *x, int n, double *g, double **h);
-void doglegDirection(FuncInfo info, double *x, int n, double *g, double **h, double* cauchy_dir, double reg_sz, double *dir);
-double taylorEval(double fx, double *x, int n, double *g, double **h, double *p);
+double cauchy_point(int n, double *g, double **h);
+void   doglegDirection(int n, double *g, double **h, double* cauchy_dir, double reg_sz, double *dir);
+double taylorEval(double fx, int n, double *g, double **h, double *p);
 double doglegOptimize(FuncInfo info, double *x, int n, int max_iter, double tg, double tx, double tf, double reg_szM);
 
 #endif

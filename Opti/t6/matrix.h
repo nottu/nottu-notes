@@ -19,5 +19,5 @@ void multiplyMatrixTransposed(double **m1, double **m2, int n, int m, int p, dou
 void multiplyMatrixVector(double **mat, double *v, int n, int m, double *out);
 
 void printMatrix(double**a, int nr, int nc);
-
+void copyMatrix(double **a, double** c, int nr, int nc);
 #endif
