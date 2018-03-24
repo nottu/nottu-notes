@@ -2,6 +2,9 @@
 #define OPTIMIZATION
 #define SQUARE(x) ((x)*(x))
 
+#include "matrix.h"
+#include "matrix_factor.h"
+
 typedef enum step { StepFijo, StepAprox, StepHess, StepBacktrack, StepInterpol} Step;
 
 typedef struct fncinfo {
@@ -45,4 +48,7 @@ double digitEstimator(double *x , int n);
 double* digitEstimator_gradient(double *x , int n, double *g);
 double** digitEstimator_hessian(double *x , int n, double **h);
 
+
+//
+double cuadraticSolver(double a, double b, double c);
 #endif

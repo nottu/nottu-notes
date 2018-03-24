@@ -3,7 +3,6 @@
 #include <math.h>
 #include <string.h>
 #include "optimization.h"
-#include "matrix.h"
 
 //step getting functions
 double get_step_hess(FuncInfo info, double *x, int n, double *g){
@@ -324,6 +323,11 @@ double** smoothing_hessian(double *x, int n, double **h){
   h[n - 1][n - 1] = 2 + 2 * lambda;
 
   return h;
+}
+
+
+double cuadraticSolver(double a, double b, double c){
+  return (-b + sqrt( SQUARE(b) - 4.0 * a * c)) / (2.0 * a);
 }
 
 // double digitEstimator(double *x , int n){
