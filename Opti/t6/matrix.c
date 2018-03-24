@@ -87,3 +87,9 @@ void multiplyMatrixVector(double **mat, double *v, int n, int m, double *out){
     out[i] = dotproduct(mat[i], v, m);
   }
 }
+
+void printMatrix(double**a, int nr, int nc){
+  for (int i = 0; i < nr; ++i) {
+    printVector(a[i], nc);
+  }
+}

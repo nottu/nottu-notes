@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "matrix.h"
 #include "optimization.h"
 
 int doDoglegRoss(char* filename, int max_iter, double tg, double tx, double tf, double reg_sz){
