@@ -345,6 +345,7 @@ double cauchy_point(int n, double *g, double **h){
 
 void doglegDirection(int n, double *g, double **h, double* cauchy_dir, double reg_sz, double *dir){
   double *pb = luSolver(h, g, n, n);
+  if(pb == NULL) return;
   if(vectorNorm(pb, n, 2) < reg_sz) {
     // printf("SMALL DOG\n");
     copyVector(pb, dir, n);

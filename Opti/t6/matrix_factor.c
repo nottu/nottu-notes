@@ -4,13 +4,15 @@
 #include "matrix_factor.h"
 #include "matrix.h"
 
+#define ZEROISH 1E-6
+
 int cholesky(double **a, int n, double **l){
   for (int i = 0; i < n; ++i) {
     l[i][i] = a[i][i];
     for (int k = 0; k < i; ++k) {
       l[i][i] -= l[i][k] * l[i][k];
     }
-    if(l[i][i] <= 1E-6){
+    if(l[i][i] <= ZEROISH){
       // printf("No se puede hacer factorización Cholesky\n");
       return 0; //could not do cholesky
     }
@@ -71,7 +73,7 @@ int luFactor(double** a, double **l, double **u, int nr, int nc){
     }
     for (int j = i+1; j < nc; ++j) {
       double lij = a[i][j];
-      if(fabs(l[i][i]) < 1E-4)
+      if(fabs(l[i][i]) < ZEROISH)
         return 0;
       for (int k = 0; k < i; ++k) {
         lij -= l[i][k]*u[k][j];
@@ -87,7 +89,7 @@ double* luSolver(double **a, double *b, int nr, int nc){ //should move to anothe
   double **u = allocMatrix(nr, nc);
   if(!luFactor(a, l, u, nr, nc)){
     printf("FAILED LU FACTOIRZATION!!\n");
-    exit(1);
+    return NULL;
   }
   double* sol = lowerSol(l, b, nr, nc);
   double* sol2 = upperSol(u, sol, nr, nc);
@@ -108,7 +110,7 @@ int luFactor2(double **a, int nr, int nc){
     }
     for (int j = i+1; j < nc; ++j) {
       double lij = a[i][j];
-      if(fabs(a[i][i]) < 1E-4)
+      if(fabs(a[i][i]) < ZEROISH)
         return 0;
       for (int k = 0; k < i; ++k) {
         lij -= a[i][k]*a[k][j];

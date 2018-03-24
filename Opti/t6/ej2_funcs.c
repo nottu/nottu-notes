@@ -66,11 +66,11 @@ double gaussianAdjust(int ***hist, int x, int y, int z, double *alphas, double *
   double val = 0;
   double *cvec = newVector(DIM); //[r, g, b]
   for (int i = 0; i < x; ++i){
-    cvec[0] = i;
+    cvec[0] = i;// * 255/(x-1);
     for (int j = 0; j < y; ++j){
-      cvec[1] = j;
+      cvec[1] = j;// * 255/(x-1);
       for (int k = 0; k < z; ++k){
-        cvec[2] = k;
+        cvec[2] = k;// * 255/(x-1);
         double gm = evalGaussianMix(alphas, mus, cvec, sigma, n);
         double hc = hist[i][j][k];
         val += SQUARE(hc - gm);
@@ -91,11 +91,11 @@ double* gaussianAdjust_alpha_gradient(int ***hist, int x, int y, int z, double *
     double val = 0;
     // create c
     for (int i = 0; i < x; ++i){
-      cvec[0] = i;
+      cvec[0] = i;// * 255/(x-1);
       for (int j = 0; j < y; ++j){
-        cvec[1] = j;
+        cvec[1] = j;// * 255/(x-1);
         for (int k = 0; k < z; ++k){
-          cvec[2] = k;
+          cvec[2] = k;// * 255/(x-1);
           double gm = evalGaussianMix(alphas, mus, cvec, sigma, n);
           double hc = hist[i][j][k];
           substractVectors(cvec, mus[l], c_mu, 3);
@@ -123,11 +123,11 @@ double **gaussianAdjust_alpha_hessian(int ***hist, int x, int y, int z, double *
       double val = 0;
       // create c
       for (int i = 0; i < x; ++i){
-        cvec[0] = i;
+        cvec[0] = i;// * 255/(x-1);
         for (int j = 0; j < y; ++j){
-          cvec[1] = j;
+          cvec[1] = j;// * 255/(x-1);
           for (int k = 0; k < z; ++k){
-            cvec[2] = k;
+            cvec[2] = k;// * 255/(x-1);
             substractVectors(cvec, mus[l], c_mu, 3);
             double e1 =  exp(-1 * SQUARE(vectorNorm(c_mu, DIM, 2))  / (2*SQUARE(sigma)) );
             substractVectors(cvec, mus[m], c_mu, 3);
@@ -149,7 +149,7 @@ double doglegOptimize_alpha(int ***hist, int x, int y, int z, double *alphas, do
   double *g = gaussianAdjust_alpha_gradient(hist, x, y, z, alphas, mus, sigma, n, newVector(n));
   double **H = gaussianAdjust_alpha_hessian(hist, x, y, z, alphas, mus, sigma, n, allocMatrix(n, n));
 
-  double fx;// = gaussianAdjust(hist, x, y, z, alphas, mus, sigma, n);
+  double fx = gaussianAdjust(hist, x, y, z, alphas, mus, sigma, n);;// = gaussianAdjust(hist, x, y, z, alphas, mus, sigma, n);
   double norm2 = vectorNorm(g, n, 2);
   double reg_sz = reg_szM;
   int iter = 0;
@@ -217,11 +217,11 @@ double* gaussianAdjust_mu_gradient(int ***hist, int x, int y, int z, double *alp
     double val = 0;
     // create c
     for (int i = 0; i < x; ++i){
-      cvec[0] = i;
+      cvec[0] = i;// * 255/(x-1);
       for (int j = 0; j < y; ++j){
-        cvec[1] = j;
+        cvec[1] = j;// * 255/(x-1);
         for (int k = 0; k < z; ++k){
-          cvec[2] = k;
+          cvec[2] = k;// * 255/(x-1);
           double gm = evalGaussianMix(alphas, mus, cvec, sigma, n);
           double hc = hist[i][j][k];
 
@@ -248,15 +248,16 @@ double **gaussianAdjust_mu_hessian(int ***hist, int x, int y, int z, double *alp
       double val = 0;
       // create c
       for (int i = 0; i < x; ++i){
-        cvec[0] = i;
+        cvec[0] = i;// * 255/(x-1);
         for (int j = 0; j < y; ++j){
-          cvec[1] = j;
+          cvec[1] = j;// * 255/(x-1);
           for (int k = 0; k < z; ++k){
-            cvec[2] = k;
+            cvec[2] = k;// * 255/(x-1);
             substractVectors(cvec, mus[l], c_mu, 3);
-            double e1 =  exp(-1 * SQUARE(vectorNorm(c_mu, DIM, 2)) / (2*SQUARE(sigma)) ) * (c_mu[channel] - mus[l][channel]) / SQUARE(sigma);
+            double e1 = alphas[l] * exp(-1 * SQUARE(vectorNorm(c_mu, DIM, 2)) / (2*SQUARE(sigma)) ) * (c_mu[channel] - mus[l][channel]) / SQUARE(sigma);
+            // printf("alphas[l] %g \t e1 %g\n", alphas[l],  SQUARE(vectorNorm(c_mu, DIM, 2)) / (2*SQUARE(sigma)) );
             substractVectors(cvec, mus[m], c_mu, 3);
-            val += e1 * exp(-1 * SQUARE(vectorNorm(c_mu, DIM, 2)) / (2*SQUARE(sigma)) ) * (c_mu[channel] - mus[m][channel]) / SQUARE(sigma);
+            val += e1 * alphas[m] * exp(-1 * SQUARE(vectorNorm(c_mu, DIM, 2)) / (2*SQUARE(sigma)) ) * (c_mu[channel] - mus[m][channel]) / SQUARE(sigma);
           }
         }
       }
@@ -274,7 +275,7 @@ double doglegOptimize_mu(int ***hist, int x, int y, int z, double *alphas, doubl
   double *g = gaussianAdjust_mu_gradient(hist, x, y, z, alphas, mus, sigma, n, newVector(n), channel);
   double **H = gaussianAdjust_mu_hessian(hist, x, y, z, alphas, mus, sigma, n, allocMatrix(n, n), channel);
 
-  double fx;// = gaussianAdjust(hist, x, y, z, alphas, mus, sigma, n);
+  double fx = gaussianAdjust(hist, x, y, z, alphas, mus, sigma, n);// = gaussianAdjust(hist, x, y, z, alphas, mus, sigma, n);
   double norm2 = vectorNorm(g, n, 2);
   double reg_sz = reg_szM;
   int iter = 0;
@@ -288,6 +289,7 @@ double doglegOptimize_mu(int ***hist, int x, int y, int z, double *alphas, doubl
     fx = gaussianAdjust(hist, x, y, z, alphas, mus, sigma, n);
     iter++;
     double a = cauchy_point(n, g, H);
+    // printf("alp %g\n", a);
     copyVector(g, pu, n);
     scaleVector(pu, n, a);
     double pu_norm = vectorNorm(pu, n ,2);
@@ -307,10 +309,16 @@ double doglegOptimize_mu(int ***hist, int x, int y, int z, double *alphas, doubl
       mus1[i][channel] = mus[i][channel] + dir[i];
     }
     taylorev = fx - taylorEval(fx, n, g, H, dir);
+    // taylorev = dotproduct(g, dir, n);
+    if(taylorev < 0){
+      printf("ERROR, taylorev debe ser positivo\n");
+      break;
+    }
     double fx1 = gaussianAdjust(hist, x, y, z, alphas, mus1, sigma, n);
     phi = (fx - fx1 ) / (taylorev);
     //....
     // printf("Iter %i:%i \tf(x): %g\t||g||: %g\t reg_sz %lg\t phi: %g\t taylor %g\n", iter, max_iter, fx, norm2, reg_sz, phi, taylorev);
+    if(isnan(phi)) break;
     if(phi < 0.25) {
       reg_sz /= 4; //bad model
       if(reg_sz < 1E-6) break;
@@ -326,6 +334,8 @@ double doglegOptimize_mu(int ***hist, int x, int y, int z, double *alphas, doubl
     H = gaussianAdjust_mu_hessian(hist, x, y, z, alphas, mus, sigma, n, H, channel);
     norm2 = vectorNorm(g, n, 2);
   }
+  // printMatrix(H, n, n);
+  // printf("\n");
   printf("Exit Iter %i:%i \tf(x): %g\t||g||: %g\t reg_sz %lg\t phi: %g\t taylor %g\n", iter, max_iter, fx, norm2, reg_sz, phi, taylorev);
 
   free(g);
