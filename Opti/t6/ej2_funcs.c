@@ -55,7 +55,7 @@ double evalGaussianMix(double *alphas, double **mus, double *c, double sigma, in
   for (int i = 0; i < n; ++i){
     substractVectors(c, mus[i], c_mu, DIM);
     double exp_term = -1 * SQUARE(vectorNorm(c_mu, DIM, 2));
-    exp_term /= 2 * SQUARE(sigma);
+    exp_term /= (2 * SQUARE(sigma));
     val+= alphas[i] * exp(exp_term);
   }
   free(c_mu);
@@ -136,8 +136,8 @@ double **gaussianAdjust_alpha_hessian(int ***hist, int x, int y, int z, double *
         }
       }
 
-      hessian[l][m] = val;
-      hessian[m][l] = val; //hessian is symmetrical
+      hessian[l][m] = 2*val;
+      hessian[m][l] = 2*val; //hessian is symmetrical
     }
   }
   free(c_mu);

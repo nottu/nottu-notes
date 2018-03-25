@@ -1,0 +1,86 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{listings}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\decimalpoint
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{helvet}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\familydefault}{\sfdefault}
+\graphicspath{ {./} }
+\usepackage{multirow}
+\usepackage[table,xcdraw]{xcolor}
+
+\title {Optimización Tarea 5}
+  \author {Francisco Javier Peralta Ramírez}
+
+\begin{document}
+\maketitle
+\begin{enumerate}
+
+\item Implementar el método de región de confianza "Dogleg" y apliquelo a la función de Rosembrock.
+
+Con el método de Dogleg la función Rosembrock converge extremandamente rápido, en tan sólo 60 iteraciones logra obtener valores de $f(x) = 7.76163E-17$
+\begin{table}[ht]
+\centering
+% \caption{Resultados Rosembor N = 2}
+\label{my-label}
+  \begin{tabular}{lll}
+  \multicolumn{3}{c}{Paso Hessiano} \\ \hline
+  \rowcolor[HTML]{DBDBDB} 
+  \multicolumn{1}{|l|}{\cellcolor[HTML]{DBDBDB}k} & \multicolumn{1}{l|}{\cellcolor[HTML]{DBDBDB}$||\nabla f (x_k )||$}       & \multicolumn{1}{l|}{\cellcolor[HTML]{DBDBDB}$f(x_k)$} \\ \hline
+  \multicolumn{1}{|l|}{1}  & \multicolumn{1}{l|}{0.15478}  &\multicolumn{1}{l|}{24.2} \\ \hline
+  \multicolumn{1}{|l|}{2}  & \multicolumn{1}{l|}{0.00081548} & \multicolumn{1}{l|}{4.73188} \\ \hline
+  \multicolumn{1}{|l|}{3}  & \multicolumn{1}{l|}{0.000986846}  & \multicolumn{1}{l|}{4.73188} \\ \hline
+  \multicolumn{1}{|l|}{4}  & \multicolumn{1}{l|}{6.99271e-05}  & \multicolumn{1}{l|}{4.01844} \\ \hline
+  \multicolumn{1}{|l|}{58} & \multicolumn{1}{l|}{7.20339e-06}  & \multicolumn{1}{l|}{4.43994e-06} \\ \hline
+  \multicolumn{1}{|l|}{59} & \multicolumn{1}{l|}{1.02172e-06}  & \multicolumn{1}{l|}{8.54455e-10} \\ \hline
+  \multicolumn{1}{|l|}{60} & \multicolumn{1}{l|}{1.49948e-07}  & \multicolumn{1}{l|}{7.76163e-17} \\ \hline
+  \end{tabular}
+\end{table}
+
+\item Resolver el problema de ajustar una mezcla de gaussianas a un histograma 3D. La función está dada por:
+
+$$\min_{\alpha^j, \mu^j}g(\alpha^j, \mu^j) = \sum_{c\in\Omega} [ h^j(c) - \sum_{i = 1}^{n} \alpha_i^j exp\left( -\frac{||c - \mu_i^j||^2_2}{2\sigma^2} \right)]^2$$
+
+Requerimos encontrar el gradiente con respecto a alpha y mu.
+
+$$ \frac{\delta}{\delta\alpha_k^j} = -2\sum_{c\in\Omega} [ h^j(c) - \sum_{i = 1}^{n} \alpha_i^j exp\left( -\frac{||c - \mu_i^j||^2_2}{2\sigma^2} \right)] exp\left( -\frac{||c - \mu_k^j||^2_2}{2\sigma^2} \right) $$
+
+
+$$ \frac{\delta}{\delta\mu_k^j} = \sum_{c\in\Omega} [ h^j(c) - \sum_{i = 1}^{n} \alpha_i^j exp\left( -\frac{||c - \mu_i^j||^2_2}{2\sigma^2} \right)] \alpha_k^jexp\left( -\frac{||c - \mu_k^j||^2_2}{2\sigma^2} \right) \frac{(c - \mu_k^j)}{\sigma^2}$$
+
+Y los hessianos
+
+$$ \frac{\delta}{\delta\alpha_k^j \delta\alpha_l^j} = 2\sum_{c\in\Omega}  exp\left( -\frac{||c - \mu_l^j||^2_2}{2\sigma^2} \right) exp\left( -\frac{||c - \mu_k^j||^2_2}{2\sigma^2} \right) $$
+
+
+$$ \frac{\delta}{\delta\mu_k^j\delta\mu_l^j} = -\sum_{c\in\Omega}  \alpha_l^j exp\left( -\frac{||c - \mu_l^j||^2_2}{2\sigma^2} \right) \frac{(c - \mu_l^j)}{\sigma^2} \alpha_k^j exp\left( -\frac{||c - \mu_k^j||^2_2}{2\sigma^2} \right) \frac{(c - \mu_k^j)}{\sigma^2}$$
+
+Para resolver el problema, optimizamos con dogleg primero sobre las $\alpha$, luego sobre las $\mu$ y esto lo contamos como una iteración. Continuamos resolviendo hasta lograr convergencia.
+
+Al obtener los alphas, y los mus, usamos la siguiente función para categorizar:
+
+\begin{align*}
+ f(c, \alpha, \mu) &= \sum_{i = 1}^{n} \alpha_i^j exp\left( -\frac{||c - \mu_i^j||^2_2}{2\sigma^2} \right)\\
+ F(c, \alpha^1, \mu^1) &= \frac{f(c, \alpha^1, \mu^1) + \epsilon}{f(c, \alpha^1, \mu^1) + f(c, \alpha^2, \mu^2) + 2\epsilon}\\
+F(c, \alpha^2, \mu^2) &= \frac{f(c, \alpha^2, \mu^2) + \epsilon}{f(c, \alpha^1, \mu^1) + f(c, \alpha^2, \mu^2) + 2\epsilon}
+\end{align*}
+
+Asignamos la categoría 2 cuando $F(c, \alpha^2, \mu^2) > F(c, \alpha^1, \mu^1)$ y 1 en el caso contrario.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\textwidth]{test1.png}
+    \caption{5 Gaussianas}
+    \label{fig:r2f1}
+\end{figure}
+
+\end{enumerate}
+\end{document}
