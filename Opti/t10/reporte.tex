@@ -1,0 +1,137 @@
+\documentclass{article}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{listings}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{multicol}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{helvet}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table,xcdraw]{xcolor}
+\decimalpoint
+\graphicspath{ {./} }
+
+\title {Optimización Tarea 10}
+  \author {Francisco Javier Peralta Ramírez}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+  En está tarea se programa el algoritmo \emph{Levenberg-Marquardt} para resolver \emph{Mínimos Cuadrados No Lineales} y se prueba resolviendo la función de Rosenbrock y con un conjunto de puntos dados.
+\end{abstract}
+\begin{multicols}{2}
+
+\section{Introducción}
+
+El método de \emph{Gauss-Newton} es como el método de Newton con busqueda en linea pero con una aproximación para la Hessiana, el método de \emph{Levenberg-Marquardt} se puede obtener con la misma aproximación para la Hessiana pero remplanzando la busqueda en linea por una estrategia de región de confianza. Esto evita una de las debilidades de \emph{Gauss-Newton}, su comportamiento cuando el Jacobiano ($J$) no es de rango completo.
+
+El problema está dado por
+
+$$\min_p \frac{1}{2}||Jp+r||^2, \qquad \text{sujeto a} \quad ||p|| < \delta$$
+
+donde $\delta > 0$ es el radio de la región de confianza y sólo si existe una constante $\lambda \geq 0$ tal que
+\begin{align*}
+ (J^\intercal J + \lambda I)p &= -J^\intercal r\\
+  \lambda(\delta - ||p||) &= 0
+\end{align*}
+
+Cuando $p$ está dentro de la región de confianza, $||p|| < \delta$, $\lambda = 0$ y por lo tanto $p$ coincide con \emph{Gauss-Newton}. Por otra parte sí $\lambda$ es muy grande $J^\intercal J + \lambda I \approx \lambda I$ por lo que
+\begin{align*}
+ p &= -\frac{1}{\lambda}J^\intercal r\\
+ &= -\frac{1}{\lambda}\nabla f(\boldsymbol{x})
+  \lambda(\delta - ||p||)
+\end{align*}
+por lo tanto se comporta como descenso de gradiente.
+
+% \newpage
+\section{Levenberg-Marquardt}
+
+El algoritmo \emph{Levenberg-Marquardt} es:
+
+\begin{algorithm}[H]
+\caption{LM}\label{lm}
+\begin{algorithmic}[1]
+\Function{lm}{$x_0$, R, J, t, i}
+  \State $r$ := $R(x_0)$
+  \State $j$ := $J(x_0)$
+  \State $\lambda$ := max\_diag($j^\intercal j$)
+  \State $k$ := $0$
+  \While{$ ||j^\intercal r|| > t$ \textbf{and} $k < i$}
+    \State $p \leftarrow$ Solve $(j^\intercal j + \lambda I) p = -j^\intercal r$
+    \State $x_{k+1} = x_k + p$
+    \If{ $R(x_{k+1})^\intercal R(x_{k+1}) \geq R(x_{k})^\intercal R(x_{k})$}
+    \State $x_{k+1} = x_{k}$
+    \State $\lambda = \nu\lambda$
+    \Else
+    \State $\lambda = \lambda / \nu$
+    \EndIf
+    \State $k$ := $k + 1$
+  \EndWhile
+  \State\textbf{return} $x_k$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\section{Resultados}
+Para probar nuestro algoritmo se usó la función Rosenbrock en residuales la cual está dada por
+\begin{align*}
+  r_{2i}(\boldsymbol{x}) &= 10(x_{2i+1} - x_{2i}^2)\\
+  r_{2i+1}(\boldsymbol{x}) &= 1 - x_{2i}
+\end{align*}
+
+para $i = 0, 1, \ldots, m-1$
+
+Calculamos el Jacobiano:
+
+{
+\begin{align*}
+  J_{2i,2i}(\boldsymbol{x})   &= -20 x_{2i}\\
+  J_{2i+1,2i}(\boldsymbol{x}) &= -1\\
+  J_{2i,2i+1}(\boldsymbol{x}) &= 10
+\end{align*}
+}
+
+Usando una tolerancia $\tau = 0.001 n$ y cambiando $\nu$ obtenemos los siguientes resultados
+\begin{table}[H]
+\small
+\centering
+\label{my-label}
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+n & $\nu$ & k & $(x_{k})_1\qquad (x_{k})_2$ & $f(\boldsymbol{x}_k)$ & $||\nabla f(\boldsymbol{x}_k)||$ \\ \hline
+2  & 1.25 & 9206  & $0.996\qquad0.992$ & 7E-6  & 0.0018 \\
+2  & 1.50 & 9123  & $0.996\qquad0.991$ & 9E-6  & 0.0020 \\
+2  & 2.50 & 8095  & $0.996\qquad0.991$ & 9E-6  & 0.0020 \\
+2  & 10.0 & 10719 & $0.996\qquad0.992$ & 7E-9  & 0.0020 \\
+50 & 1.25 & 3914  & $0.941\qquad0.887$ & 0.003 & 0.04 \\
+50 & 1.50 & 3571  & $0.929\qquad0.863$ & 0.005 & 0.05 \\
+50 & 2.50 & 3117  & $0.926\qquad0.857$ & 0.005 & 0.05 \\
+50 & 10.0 & 4217  & $0.940\qquad0.884$ & 0.003 & 0.05 \\ \hline
+\end{tabular}
+\end{table}
+
+También probamos ajustando un modelo dado por
+$$ p_1x + p_2 + p_3 \exp[p_4(x - p_5)^2] $$
+para el conjunto de datos ${(x_i, y_i)}_{i=0}^{m-1}$.
+
+Se usó una tolerancia $\tau = 0.001 n$, $\nu = 1.25$ y un punto inicial $p_0 = (0, 0, 15, -2.0)^\intercal$. El algoritmo convirgió en $k = 823$.
+
+\includegraphics[width=0.45\textwidth]{grafica.png}
+
+\section{Conclución}
+
+Para el problema de Rosenbrock con $n = 2$ notamos que el desempeño del algoritmo es poco óptimo, a diferencia de métodos como \emph{BFGS}, este tomó muchas iteraciones para encontrar el óptimo, pero aún así tardó menos que una busqueda por descenso de gradiente. Por otra parte cuando se usó para ajustar un modelo no lineal a un conjunto de datos obtuvimos buenos resultados.
+
+
+\newpage
+
+\end{multicols}
+\end{document}
