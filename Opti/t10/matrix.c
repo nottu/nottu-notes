@@ -45,6 +45,13 @@ void freeMatrix(double **mtx){
   free(indi);
 }
 
+double** transposeMatrix(double **mtx, int n, int m){
+  double **t = allocMatrix(m, n);
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < m; ++j)
+      t[j][i] = mtx[i][j];
+  return t;
+}
 //simple operations
 void addMatrix(double **m1, double** m2, int n, int m, double **out){
   for (int i = 0; i < n; ++i)
@@ -57,11 +64,9 @@ void substractMatrix(double **m1, double** m2, int n, int m, double **out){
 //multiply nxm with mxp
 void multiplyMatrix(double **m1, double **m2, int n, int m, int p, double **out){
   for (int i = 0; i < n; ++i){
-    for (int j = 0; j < m; ++j)
-    {
+    for (int j = 0; j < m; ++j){
       double c = 0;
-      for (int k = 0; k < p; ++k)
-      {
+      for (int k = 0; k < p; ++k){
         c += m1[i][k] * m2[k][j];
       }
       out[i][j] = c;
@@ -82,9 +87,32 @@ void multiplyMatrixTransposed(double **m1, double **m2, int n, int m, int p, dou
   }
 }
 //vector matrix
-void multiplyMatrixVector(double **mat, double *v, int n, int m, double *out){
+double* multiplyMatrixVector(double **mat, double *v, int n, int m, double *out){
   for (int i = 0; i < n; i++) {
     out[i] = dotproduct(mat[i], v, m);
+  }
+  return out;
+}
+double* multiplyMatrixTransposedVector(double **mat, double *v, int n, int m, double *out){
+  double **t = transposeMatrix(mat, n, m);
+  multiplyMatrixVector(t, v, m, n, out);
+  freeMatrix(t);
+  return out;
+}
+
+void vectorVector(double *v1, double *v2, int n, int m, double **out){
+  for (int i = 0; i < n; ++i){
+    for (int j = 0; j < m; ++j){
+      out[i][j] = v1[i] * v2[j];
+    }
+  }
+}
+
+void scaleMatrix(double **mat, int n, int m, double scale){
+  for (int i = 0; i < n; ++i){
+    for (int j = 0; j < m; ++j){
+      mat[i][j] = mat[i][j] * scale;
+    }
   }
 }
 

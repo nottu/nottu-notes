@@ -6,6 +6,10 @@
 #include "matrix_factor.h"
 
 typedef enum step { StepFijo, StepAprox, StepHess, StepBacktrack, StepInterpol} Step;
+typedef double (*BetaFun)(double*, double*, double*, int);
+
+typedef double* (MultiFun)(double *, int, double*);
+typedef double** (Jacobian)(double *, int, double**);
 
 typedef struct fncinfo {
   double (*function)(double*, int n);
@@ -48,6 +52,15 @@ double digitEstimator(double *x , int n);
 double* digitEstimator_gradient(double *x , int n, double *g);
 double** digitEstimator_hessian(double *x , int n, double **h);
 
+//convex 1
+double convex1(double *x, int n);
+double* convex1_gradient(double *x, int n, double *g);
+double** convex1_hessian(double *x, int n, double **h);
+
+//convex 2
+double convex2(double *x, int n);
+double* convex2_gradient(double *x, int n, double *g);
+double** convex2_hessian(double *x, int n, double **h);
 
 //
 double cuadraticSolver(double a, double b, double c);
@@ -58,4 +71,17 @@ void   doglegDirection(int n, double *g, double **h, double* cauchy_dir, double 
 double taylorEval(double fx, int n, double *g, double **h, double *p);
 double doglegOptimize(FuncInfo info, double *x, int n, int max_iter, double tg, double tx, double tf, double reg_szM);
 
+//
+void linealConjugateGradient(FuncInfo info, double *x, int n, double tg, double tx, double tf);
+double fletcher_reeves(double *g, double *g1, double *d, int n);
+double polak_ribiere(double *g, double *g1, double *d, int n);
+double hestenes_stiefel(double *g, double *g1, double *d, int n);
+void non_linear_conjugateGradient(FuncInfo info, double *x, int n, double tg, double tx, double tf, BetaFun betaFun);
+
+//
+double *newton_no_lineal(double *x, MultiFun f, Jacobian j, int max_iter, double toler, int n);
+double *broyden(double *x, MultiFun f, Jacobian j, int max_iter, double toler, int n);
+
+double **HessianAproximator(double *x, FuncInfo info, int n, double h);
+double *bfgs(double *x, FuncInfo info, double **H, int max_iter, double toler, int n);
 #endif

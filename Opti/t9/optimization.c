@@ -46,10 +46,13 @@ double get_step_backtracking(FuncInfo info, double* d, double *x, double c, doub
   double fx = info.function(x, n);
   while(1){
     memcpy(g, d, sizeof(double) * n); //copy direction to gradient vector
-    scaleVector(g, n, alpha);
-    sumVectors(x, g, g, n);
-    double fxk = info.function(g, n);
-    if(fxk <= fx + alpha*c*fd) break;
+    scaleVector(g, n, alpha);         // alpha d
+    sumVectors(x, g, g, n);           //x + alpha d
+    double fxk = info.function(g, n); //f(xk)
+    if(fxk <= fx + alpha*c*fd) {
+      // printf("fxk %g\n", fxk);
+      break;
+    }
     alpha *= p;
   }
   free(g);
@@ -344,7 +347,7 @@ double cauchy_point(int n, double *g, double **h){
 }
 
 void doglegDirection(int n, double *g, double **h, double* cauchy_dir, double reg_sz, double *dir){
-  double *pb = luSolver(h, g, n, n);
+  double *pb = luSolver2(h, g, n, n);
   if(pb == NULL) return;
   if(vectorNorm(pb, n, 2) < reg_sz) {
     // printf("SMALL DOG\n");
@@ -440,3 +443,311 @@ double doglegOptimize(FuncInfo info, double *x, int n, int max_iter, double tg, 
   return fx;
 }
 
+void linealConjugateGradient(FuncInfo info, double *x, int n, double tg, double tx, double tf){
+  double *g  = info.gradient(x, n, newVector(n));
+  double **h = info.hessian(x, n, allocMatrix(n, n));
+  double *d = newVector(n);
+  copyVector(g, d, n);
+  scaleVector(d, n, -1);
+
+  double *hg = newVector(n);
+  int iter = 0;
+  printf("f(x): %g\t||g(x)||: %g\n", info.function(x, n), vectorNorm(g, n ,2));
+  // printf("Gradient\t");printVector(g, n);
+  while(vectorNorm(g, n ,2) > tg && iter++ < n){
+    multiplyMatrixVector(h, d, n, n, hg);
+    double dQd = dotproduct(d, hg, n);
+    double alpha = -1 * dotproduct(g, d, n) / dQd;
+
+    copyVector(d, g, n);
+    scaleVector(g, n, alpha); //alpha_k dk
+    if(vectorNorm(g, n ,2) < tx) break;
+
+    // printVector(x, n);
+    sumVectors(x, g, x, n); // x = x + alpha_k d_k
+    // printVector(x, n);
+
+    g = info.gradient(x, n, g);
+    h = info.hessian(x, n, h);
+
+    multiplyMatrixVector(h, g, n, n, hg);
+    double beta = dotproduct(d, hg, n) / dQd;
+    scaleVector(d, n, beta);
+    substractVectors(d, g, d, n);
+    printf("Iter: %i, f(x): %g\t||g(x)||: %g\t alpha %g\n", iter, info.function(x, n), vectorNorm(g, n ,2), alpha);
+    if(info.function(x, n) < tf) break;
+  }
+
+  printf("X*\t");printVector(x, n);
+
+  free(d);
+  free(g);
+  freeMatrix(h);
+}
+double fletcher_reeves(double *g, double *g1, double *d, int n){
+  return dotproduct(g1, g1, n) / dotproduct(g, g, n);
+}
+double polak_ribiere(double *g, double *g1, double *d, int n){
+  double *dif = newVector(n);
+  substractVectors(g1, g, dif, n);
+  double beta = dotproduct(g1, dif, n) / dotproduct(g, g, n);
+  free(dif);
+  return beta > 0 ? beta : 0; //max(0, beta)
+}
+double hestenes_stiefel(double *g, double *g1, double *d, int n){
+  double *dif = newVector(n);
+  substractVectors(g1, g, dif, n);
+  double beta = dotproduct(g1, dif, n) / dotproduct(dif, d, n);
+  free(dif);
+  return beta;
+}
+
+void non_linear_conjugateGradient(FuncInfo info, double *x, int n, double tg, double tx, double tf, BetaFun betaFun){
+  double *g  = info.gradient(x, n, newVector(n));
+  double *d = newVector(n);
+  copyVector(g, d, n);
+  scaleVector(d, n, -1);
+
+  double *ad = newVector(n);
+  double *g1 = newVector(n);
+  int iter = 0;
+  FILE *out = fopen("out.txt", "w");
+  printf("f(x): %g\t||g(x)||: %g\n", info.function(x, n), vectorNorm(g, n ,2));
+  fprintf(out, "%g \t %g \t %g\n", info.function(x, n), vectorNorm(d, n ,2), vectorNorm(g, n ,2));
+  while(vectorNorm(g, n ,2) > tg && iter++ < 100){
+    double alpha = get_step_backtracking(info, d, x, 1E-4, 0.95, 1, n); //could use other method...
+
+    copyVector(d, ad, n);
+    scaleVector(ad, n, alpha); //alpha_k dk
+    sumVectors(x, ad, x, n); // x = x + alpha_k d_k
+    // if(alpha < 1E-10) break;
+    if(vectorNorm(ad, n ,2) < tx) break;
+
+    g1 = info.gradient(x, n, g1);
+    double beta = betaFun(g, g1, d, n);
+    scaleVector(d, n, beta);
+    copyVector(g1, g, n);
+    substractVectors(d, g, d, n);
+    printf("Iter: %i, f(x): %g\t||g(x)||: %g\t alpha %g\t beta %g\n", iter, info.function(x, n), vectorNorm(g, n ,2), alpha, beta);
+    fprintf(out, "%g \t %g \t %g\n", info.function(x, n), vectorNorm(d, n ,2), vectorNorm(g, n ,2));
+    if(info.function(x, n) < tf) break;
+  }
+  fclose(out);
+  free(g);
+  free(d);
+  free(g1);
+  free(ad);
+}
+
+//convex 1
+double convex1(double *x, int n){
+  double val = 0;
+  for (int i = 0; i < n; ++i) {
+    val += exp(x[i]) - x[i];
+  }
+  return val;
+}
+double* convex1_gradient(double *x, int n, double *g){
+  for (int i = 0; i < n; ++i) {
+    g[i] = exp(x[i]) - x[i];
+  }
+  return g;
+}
+double** convex1_hessian(double *x, int n, double **h){
+  return NULL;
+}
+
+//convex 2
+double convex2(double *x, int n){
+  double val = 0;
+  for (int i = 0; i < n; ++i) {
+    val += i * (exp(x[i]) - x[i]) / n;
+  }
+  return val;
+}
+double* convex2_gradient(double *x, int n, double *g){
+  for (int i = 0; i < n; ++i) {
+    g[i] = i * (exp(x[i]) - x[i]) / n;
+  }
+  return g;
+}
+double** convex2_hessian(double *x, int n, double **h){
+  return NULL;
+}
+
+void printInfo_nolineal(int k, double *x, double norm, double cond, int n){
+  printf("%d\t", k);
+  printf("\t||F|| = %.7g\tK(J) = %g\tx = (", norm, cond);
+  printVector(x, n);
+  printf("\b)\n");
+}
+
+void printInfo_fun(int k, double *x, double norm, double cond, int n){
+  printf("%d\t", k);
+  printf("\tf(x) = %.7g\tK(H) = %g\tx = (", norm, cond);
+  printVector(x, n);
+  printf("\b)\n");
+}
+
+double *newton_no_lineal(double *x, MultiFun f, Jacobian j, int max_iter, double toler, int n){
+  double *fx  = f(x, n, newVector(n));
+  double *x1 = newVector(n);
+  double **jx = j(x, n, allocMatrix(n, n));
+
+  copyVector(x, x1, n);
+  int iter = 0;
+  printInfo_nolineal(iter, x1, vectorNorm(fx, n, 2), matrix_condition(jx, n), n);
+  while(vectorNorm(fx, n, 2) > toler && iter++ < max_iter){
+    scaleVector(fx, n, -1);
+    double *x_d = luSolver2(jx, fx, n, n);
+
+    for (int i = 0; i < n; ++i){
+      x1[i] += x_d[i];
+    }
+    free(x_d);
+    f(x1, n, fx);
+    j(x1, n, jx);
+    printInfo_nolineal(iter, x1, vectorNorm(fx, n, 2), matrix_condition(jx, n), n);
+  }
+  free(fx);
+  freeMatrix(jx);
+  return x1;
+}
+
+double *broyden(double *x, MultiFun f, Jacobian j, int max_iter, double toler, int n){
+  double *fx  = f(x, n, newVector(n));
+  double *x1 = newVector(n);
+  double *f_delta = newVector(n);
+  double *f_aux = newVector(n);
+
+  double **jx = j(x, n, allocMatrix(n, n));
+  double **jx_d = allocMatrix(n, n);
+
+  copyVector(x, x1, n);
+  int iter = 0;
+  printInfo_nolineal(iter, x1, vectorNorm(fx, n, 2), matrix_condition(jx, n), n);
+  while(vectorNorm(fx, n, 2) > toler && iter++ < max_iter){
+    copyVector(fx, f_delta, n);
+    scaleVector(fx, n, -1);
+    double *x_d = luSolver2(jx, fx, n, n);
+
+    for (int i = 0; i < n; ++i){
+      x1[i] += x_d[i];
+    }
+    f(x1, n, fx);
+
+    printInfo_nolineal(iter, x1, vectorNorm(fx, n, 2), matrix_condition(jx, n), n);
+
+    substractVectors(fx, f_delta, f_delta, n);
+    double x_d_n = dotproduct(x_d, x_d, n);
+    multiplyMatrixVector(jx, x_d, n, n, f_aux);
+    substractVectors(f_delta, f_aux, f_delta, n);
+    scaleVector(f_delta, n, 1 / x_d_n);
+    for (int i = 0; i < n; ++i){
+      for (int j = 0; j < n; ++j){
+        jx_d[i][j] = f_delta[i] * x_d[j];
+      }
+    }
+    addMatrix(jx, jx_d, n, n, jx);
+    free(x_d);
+  }
+  free(fx);
+  free(f_delta);
+  freeMatrix(jx);
+  freeMatrix(jx_d);
+  return x1;
+}
+double **HessianAproximator(double *x, FuncInfo info, int n, double h){
+  double **A = allocMatrix(n, n);
+  double **I = allocMatrixIdentity(n, n);
+  scaleMatrix(I, n, n, h);
+  double *e = newVector(n);
+  double fx = info.function(x, n);
+  double hh = SQUARE(h);
+  for (int i = 0; i < n; ++i) {
+    for (int j = i; j < n; ++j) {
+      A[i][j] = fx;
+      sumVectors(x, I[i], e, n);
+      A[i][j] -= info.function(e, n);
+      sumVectors(e, I[j], e, n);
+      A[i][j] += info.function(e, n);
+      sumVectors(x, I[j], e, n);
+      A[i][j] -= info.function(e, n);
+      A[i][j] /= hh;
+      A[j][i] = A[i][j];
+    }
+  }
+  free(e);
+  freeMatrix(I);
+  return A;
+}
+
+double *bfgs(double *x, FuncInfo info, double **H, int max_iter, double toler, int n){
+  double *x1 = newVector(n);
+  copyVector(x, x1, n);
+  double fx  = info.function(x1, n);
+  double *g  = info.gradient(x1, n, newVector(n));
+  double *g2 = newVector(n);
+  double *p  = newVector(n);
+  double *s  = newVector(n);
+
+  double **rsy = allocMatrix(n, n);
+  double **rss = allocMatrix(n, n);
+  double **I = allocMatrixIdentity(n, n);
+  double **H2 = allocMatrix(n, n);
+  int iter = 0;
+  printInfo_fun(iter, x1, fx, matrix_condition(H, n), n);
+  while(vectorNorm(g, n, 2) > toler && iter < max_iter ){
+    multiplyMatrixVector(H, g, n, n, p);
+    scaleVector(p, n, -1);
+
+    copyVector(p, s, n);
+    double a = get_step_backtracking(info, p, x1, 1E-4, 0.9, 1.0, n);
+    scaleVector(s, n, a);
+    sumVectors(x1, s, x1, n);
+
+    copyVector(g, g2, n);
+    g = info.gradient(x1, n, g);
+    substractVectors(g, g2, g2, n); //g2 => y
+    double r = dotproduct(g2, s, n);
+    // printf("r %g\n", r);
+    if(r > 1E-4){
+      r = 1 / r;
+      vectorVector(s, g2, n, n, rsy);//sy
+      scaleMatrix(rsy, n, n, r);//rsy
+      substractMatrix(I, rsy, n, n, rsy);//I - rsy
+
+      multiplyMatrix(rsy, H, n, n, n, H2);
+
+      vectorVector(g2, s, n, n, rsy);//ys
+      scaleMatrix(rsy, n, n, r);//rsy
+      substractMatrix(I, rsy, n, n, rsy);//I - rys
+
+      multiplyMatrix(H2, rsy, n, n, n, H);
+
+      vectorVector(s, s, n, n, rss);
+      scaleMatrix(rss, n, n, r);
+
+      addMatrix(H, rss, n, n, H);
+      // makedefpos(H, n);
+    }
+    double dif = fx;
+    fx  = info.function(x1, n);
+    dif -= fx;
+    iter++;
+    // printMatrix(H, n, n);printf("\n");
+    printInfo_fun(iter, x1, fx, matrix_condition(H, n), n);
+    if(dif < 1E-6) break;
+  }
+
+  free(g);
+  free(g2);
+  free(p);
+  free(s);
+  freeMatrix(rsy);
+  freeMatrix(rss);
+  freeMatrix(I);
+  freeMatrix(H2);
+
+  return x1;
+}

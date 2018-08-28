@@ -17,6 +17,9 @@ void multiplyMatrix(double **m1, double **m2, int n, int m, int p, double **out)
 void multiplyMatrixTransposed(double **m1, double **m2, int n, int m, int p, double **out);
 //vector matrix
 void multiplyMatrixVector(double **mat, double *v, int n, int m, double *out);
+void vectorVector(double *v1, double *v2, int n, int m, double **out);
+
+void scaleMatrix(double **mat, int n, int m, double scale);
 
 void printMatrix(double**a, int nr, int nc);
 void copyMatrix(double **a, double** c, int nr, int nc);
