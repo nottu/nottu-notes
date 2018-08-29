@@ -1,0 +1,190 @@
+\documentclass{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{multicol}
+\usepackage{algorithm}
+\usepackage{multirow}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{helvet}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table,xcdraw, svgnames]{xcolor}
+
+\usepackage{listings}
+
+\lstset{language=R,
+    basicstyle=\small\ttfamily,
+    stringstyle=\color{DarkGreen},
+    otherkeywords={0,1,2,3,4,5,6,7,8,9},
+    morekeywords={TRUE,FALSE},
+    deletekeywords={data,frame,length,as,character},
+    keywordstyle=\color{blue},
+    commentstyle=\color{DarkGreen},
+    xleftmargin=1cm,
+}
+\decimalpoint
+\graphicspath{ {./} }
+
+\title {Tarea 7, Reconocimiento de Patrones}
+  \author {Francisco Javier Peralta Ramírez}
+  \date{\vspace{-2ex}}
+
+\begin{document}
+\vspace{-2ex}
+\maketitle
+\begin{enumerate}
+
+\item En clasificación binaria, $y \in \{-1, 1\}$, verifica que si $\hat{f} = \min_f E\exp(-Yf(X))$, $\hat{y}(x) = sgn(\hat{f}(x))$ asigna $x$ a la clase más probable.
+
+Empezamos tomando
+\begin{align*}
+\min_f E\exp(-Yf(X) &= E_XE_{Y|X=x}\exp(-Yf(x)
+\end{align*}
+Es suficiente con minimizar para cada $x$
+\begin{align*}
+&\min_f E_{Y|X=x}\exp(-Yf(x)) \\
+&= P(Y=-1|X=x)\exp(f(x)) + P(Y=1|X=x)\exp(-f(x)) \\
+\end{align*}
+Encontramos el mínimo derivando e igualando a $0$
+\begin{align*}
+\frac{\partial}{\partial f(x)} &= P(Y=-1|X=x)\exp(f(x)) - P(Y=1|X=x)\exp(-f(x)) = 0\\
+\rightarrow P(Y=-1|X=x)\exp(f(x)) &= P(Y=1|X=x)\exp(-f(x))\\
+\frac{P(Y=1|X=x)}{P(Y=-1|X=x)} &= \frac{\exp(f(x))}{\exp(-f(x))}\\
+\frac{P(Y=1|X=x)}{P(Y=-1|X=x)} &= \exp(2f(x))\\
+f(x)&= \frac{1}{2}\log\frac{P(Y=1|X=x)}{P(Y=-1|X=x)}
+\end{align*}
+Notamos que si $P(Y=1|X=x) > P(Y=-1|X=x)$ entonces $\frac{P(Y=1|X=x)}{P(Y=-1|X=x)} > 1$ entonces $f(x) > 0$ y $\hat{y} = 1$, y si $P(Y=1|X=x) < P(Y=-1|X=x)$ entonces $\frac{P(Y=1|X=x)}{P(Y=-1|X=x)} < 1$ entonces $f(x) < 0$ y $\hat{y} = -1$. Esto corresponde al clasificador Bayesiano óptimo, es decir, se asigna $x$ a la clase más probable.
+
+\item Si usamos $y \in \{-1, 1\}$, verifica que la logverosimilitud de la regresión logística será de la forma
+$$ \sum_{i}\log\frac{1}{1+exp(-y_if(x_i)}, \quad f(x) = \alpha + \beta^\intercal x $$
+
+Es decir, con el método de máxima verosimilitud para la estimación de los parámetros
+se usa como función de costo:
+
+$$\log(1+\exp[-yf(x)])$$
+
+Tenemos que $P(Y=1|X=x) = 1/(1+\exp[-f(x)]) = \pi(x)$ por lo tanto $P(Y=-1|X=x) = 1/(1+\exp[f(x)]) = 1-\pi(x)$ En clase definimos la función de probabilidad como $p(x_i, y_i) = \pi{x_i}^y_i (1-\pi{x_i})^{ 1 - y_i}$, pero ahora con $y \in \{-1, 1\}$ tenemos que cambiar los exponentes de tal forma que el primer termino se eleve a 1 y segundo termino se eleve a 0 cuando $y=1$ al reves cuando $y=-1$.
+
+Podemos usar 
+
+$$p(x_i, y_i) = \pi{x_i}^{(y_i+1)/2} (1-\pi{x_i})^{ (1 - y_i)/2}$$
+
+Con esto tenemos la función de verosimilitud ($L$) y log-verosimilitud ($l$)
+\begin{align*}
+L &= \prod_{i=1}^{n} \pi{x_i}^{(y_i+1)/2} (1-\pi{x_i})^{ (1 - y_i)/2}\\
+l &= \log(\prod_{i=1}^{n} \pi{x_i}^{(y_i+1)/2} (1-\pi{x_i})^{ (1 - y_i)/2})\\
+l &= \sum_{i=1}^{n} \log(\pi{x_i}^{(y_i+1)/2} (1-\pi{x_i})^{ (1 - y_i)/2})\\
+l &= \sum_{i=1}^{n} \frac{y_i+1}{2}\log(\pi{x_i})+ \frac{1 - y_i}{2}\log(1-\pi{x_i}) \\
+l &= \frac{1}{2}\sum_{i=1}^{n} (y_i+1)\log\left(\frac{1}{1+\exp[-f(x_i)]}\right)+ (1-y_i)\log\left(\frac{1}{1+\exp[f(x_i)]}\right)
+\end{align*}
+Cuando $y_i=1$
+$$l = \sum_{i=1}^{n} \log\frac{1}{1+\exp[-f(x_i)]}$$
+Cuando $y_i=-1$
+$$l = \sum_{i=1}^{n} \log\frac{1}{1+\exp[f(x_i)]}$$
+Por lo que podemos simplificar a
+$$l = \sum_{i=1}^{n} \log\frac{1}{1+\exp[-y_if(x_i))}$$
+
+Podemos graficar nuestra función de costo y comparar con \emph{Boosting} y \emph{SVM}. Las funciones son:
+
+\begin{itemize}
+  \item \textbf{Regresión:} $C(x, y) = \log(1+\exp[-yf(x)])$
+  \item \textbf{Boosting:} $C(x, y) =\exp[-yf(x)]$
+  \item \textbf{SVM:} $C(x, y) = \max(0, 1 - yf(x))$
+\end{itemize}
+
+\begin{center}
+  \centering
+  \includegraphics[width=300px]{penal.png}
+\end{center}
+
+Notamos que todos los métodos penaliza cuando se está clasificando bien, con SVM siendo el que menos penaliza y no penaliza despues de cierto punto. Por otra parte notamos que regresión es la función que menos incrementa con las malas penalizaciones.
+\newpage
+
+\item Implementa en R la idea de random forests a partir de la libreria rpart para árboles de decisión. Usalo para construir clasificadores para los datos SPAM. Compáralo con Boosting.
+
+Iniciamos leyendo los datos de un archivo csv, y cambiamos el nombre de la última columna a ``Y''
+\begin{lstlisting}
+data <- read.csv("datos.data")
+names(data)[length(names(data))] <- "Y" #cambia nombre del ultimo valor
+data$Y <- factor(data$Y)
+\end{lstlisting}
+Separamos los datos en un conjunto de entrenamiento y uno de prueba.
+\begin{lstlisting}
+train_pct <- 0.75
+n_train <- floor(train_pct * nrow(data))
+rand_ind <- sample(nrow(data))
+
+train <- data[head(rand_ind, n=n_train),]
+test <- data[tail(rand_ind, n=nrow(data) - n_train),]
+\end{lstlisting}
+Generamos multiples predictores con arboles usando modelos con un subconjunto de las variables disponibles
+\begin{lstlisting}
+n_trees <- 51
+n_pred <- trunc(sqrt(ncol(data)))
+
+forest <- vector(mode="list", length=n_trees)
+for (i in 1:n_trees) {
+  p <- names(train)[sample(ncol(data) - 1, n_pred)]
+  f <- paste("Y ~ ", paste(p, collapse = "+"))
+  train_set <- train[sample(nrow(train), replace = T), ]
+  fit <- rpart(as.formula(f), method='class', data=train_set)
+  forest[[i]] <- fit
+}
+\end{lstlisting}
+Para obtener la predicción checamos si la mitad o más de los arboles predijeron una clase
+\begin{lstlisting}
+res <- rep(0, nrow(test))
+for (i in 1:nrow(test)) {
+  val <- 0
+  for (j in 1:n_trees) {
+      if(predict(forest[[j]], newdata = test[i,], type = "class") == 1)
+        val <- val +1 
+  }
+  if(val >= n_trees/2) res[i] = 1
+}
+table(res, test$Y)
+\end{lstlisting}
+
+\begin{table}[H]
+\centering
+\label{my-label}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\multicolumn{2}{|l|}{\multirow{2}{*}{}} & \multicolumn{2}{c|}{classs} \\ \cline{3-4} 
+\multicolumn{2}{|l|}{} & 0 & 1 \\ \hline
+\multirow{1}{*}{ \parbox[t]{1mm}{\multirow{2}{*}{\rotatebox[origin=c]{90}{pred}}} } & 0 & 690 & 146 \\ \cline{2-4} & 1 & 11 & 303 \\ \hline
+\end{tabular}
+\end{table}
+
+Esto nos da un \emph{Accuracy} de $0.86$.
+
+Para Boosting
+\begin{lstlisting}
+control <- rpart.control(cp = -1, maxdepth = 10, maxcompete = 1, xval = 0)
+boost <- ada(Y ~ ., data = train, type = "discrete", control = control, iter = 50)
+res_boost <- predict(boost, newdata =test)
+table(res_boost, test$Y)
+\end{lstlisting}
+\begin{table}[H]
+\centering
+\label{my-label2}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\multicolumn{2}{|l|}{\multirow{2}{*}{}} & \multicolumn{2}{c|}{classs} \\ \cline{3-4} 
+\multicolumn{2}{|l|}{} & 0 & 1 \\ \hline
+\multirow{1}{*}{ \parbox[t]{1mm}{\multirow{2}{*}{\rotatebox[origin=c]{90}{pred}}} } & 0 & 681 & 24 \\ \cline{2-4} & 1 & 20 & 425 \\ \hline
+\end{tabular}
+\end{table}
+
+Lo que nos da un \emph{Accuracy} de $0.96$
+
+
+\end{enumerate}
+\end{document}

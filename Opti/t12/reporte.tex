@@ -1,0 +1,146 @@
+\documentclass{article}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{listings}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{multicol}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{helvet}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage{enumitem}
+
+\decimalpoint
+\graphicspath{ {./} }
+
+\title {Optimización Tarea 12}
+  \author {Francisco Javier Peralta Ramírez}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+  En está tarea se resuelven algunos problemas de optimización con retricciones usando el método de multiplicadores penalización cuadrática y Lagrangiano aumentado. También se progrmó el método de penalización cuadrática y se probó resolviendo un problema con multiples restricciones.
+\end{abstract}
+\begin{multicols}{2}
+
+\section*{Introducción}
+
+ El método de penalización cuadrática consiste en genera una nueva función objetivo ($q$) usando la función objetivo original más un término adicional por cada restricción. Estos terminos ligados a la restricción son positivos cuando se evalúa en un punto que viola la restricción. A estos términos se les conoce como términos de penalización.
+
+La función generada por este método es de la forma
+\vspace{-2ex}
+$$q(\boldsymbol{x}, \mu) = f(\boldsymbol{x}) + \frac{\mu}{2} \sum_{i=1}^{m} g_i^2(\boldsymbol{x}) + \frac{\mu}{2} \sum_{i=1}^{l} [h_i(\boldsymbol{x})^-]^2$$
+\noindent donde $[v^-] = \max\{v, 0\}$
+
+ Para la programación de esté método se creo una función que calcula el gradiente de la función $q$ donde $\frac{\partial f(\boldsymbol{x})}{\partial x_i} \approx \frac{ f(\boldsymbol{x} + h\boldsymbol{e_i}) - f(\boldsymbol{x}) }{h}$ donde $\boldsymbol{e_i}$ es el i-ésimo vector canónico.
+
+
+El método de Lagrange Aumentado es una combinación del método de lagrange con el método de penalización cuadrática. Se crea una función objetivo de la forma
+\vspace{-2ex}
+$$ \mathcal{L}_A(\boldsymbol{x};\boldsymbol{\lambda}; \mu) = f(\boldsymbol{x}) - \sum_{i=1}^{m}\lambda_ig_i(\boldsymbol{x}) + \frac{\mu}{2} \sum_{i=1}^{m} g_i^2(\boldsymbol{x})$$
+
+\section*{Penalización Cuadrática}
+
+Resolvemos el problema 
+\begin{align*}
+\min_{\boldsymbol{x}}&\quad x_1^2 + 2 x_2^2\\
+\text{ sujeto a }&\quad 1-x_1+x_2 \leq 0
+\end{align*}
+usando el método de penalización cuadrática calculando el límite de $\mu \rightarrow \infty $
+\begin{align*}
+q(\boldsymbol{x}, \mu) = x_1^2 + 2 x_2^2 + \mu[\max\{ 0, 1-x_1 + x_2 \}]^2\\
+\end{align*}
+Calculamos las derivadas parciales cuando no se cumple la restricción, es decir $1-x_1 + x_2 > 0$.
+\begin{align*}
+\frac{\partial q(\boldsymbol{x}, \mu)}{\partial x_1} &= 2x_1 - 2\mu(1-x_1+x_2)\\
+\frac{\partial q(\boldsymbol{x}, \mu)}{\partial x_1} &= 4x_2 - 2\mu(1-x_1+x_2)\\
+\end{align*}
+Igualando ambas equaciones a $0$ obtenemos un sistema de equaciones. Con $\frac{\partial q(\boldsymbol{x}, \mu)}{\partial x_1} + \frac{\partial q(\boldsymbol{x}, \mu)}{\partial x_2}$ obtenemos que $2x_1 + 4x_2 = 0 \rightarrow x_1 = -2x_2$. Substituyendo en $\frac{\partial q(\boldsymbol{x}, \mu)}{\partial x_1}$
+\begin{align*}
+4x_2 - 2\mu(1-x_1+x_2) &=0\\
+4x_2 - 2\mu(1+2x_2+x_2) &=0\\
+4x_2 - 2\mu +6\mu x_2 &=0\\
+2x_2(2+3\mu) &= -2\mu\\
+x_2 &= -\frac{\mu}{2+3\mu}\\
+x_1 &= \frac{2\mu}{2+3\mu}
+\end{align*}
+Calculamos los límites cuando $\mu \rightarrow \infty$
+\begin{align*}
+\lim_{\mu\rightarrow\infty} -\frac{\mu}{2+3\mu} &= -\frac{\infty}{\infty}\\
+\text{L'Hopital}\rightarrow \lim_{\mu\rightarrow\infty} -\frac{1}{3} &= -\frac{1}{3}\\
+\lim_{\mu\rightarrow\infty} \frac{2\mu}{2+3\mu} &= \frac{\infty}{\infty}\\
+\text{L'Hopital}\rightarrow \lim_{\mu\rightarrow\infty} \frac{2}{3} &= \frac{2}{3}
+\end{align*}
+podemos caulcular los eigenvalores de la función $f(\boldsymbol{x}) + \mu p(\boldsymbol{x})$ y calcular su límite cuando $\mu \rightarrow \infty$. Tomando el caso cuando no se cumple la restricción:
+\begin{align*}
+\frac{\partial q(\boldsymbol{x}, \mu)}{\partial^2 x_1}   &= 2 + 2\mu\\
+\frac{\partial q(\boldsymbol{x}, \mu)}{\partial x_1 x_2} &= -2\mu\\
+\frac{\partial q(\boldsymbol{x}, \mu)}{\partial x_1 x_2} &= 4 + 2\mu\\
+\end{align*}
+Recordamos que para encontrar los eigenvalores basta con resolver $\det(\nabla^2q - \lambda I) = 0$
+$$
+\nabla^2q - \lambda I= 
+ \begin{pmatrix}
+  2 + 2\mu -\lambda && -2\mu\\
+  -2\mu             && 4 + 2\mu - \lambda\\
+ \end{pmatrix}
+$$
+Tomamos $H = \nabla^2q - \lambda I$
+\begin{align*}
+\det(H) &= (2 + 2\mu -\lambda)(4+2\mu - \lambda) - (-2\mu)^2 = 0\\
+&= 8+12\mu-6\lambda-4\mu\lambda+4\mu^2+\lambda^2 - 4\mu^2 = 0\\
+&= 8+12\mu + \lambda^2 - (4\mu+6)\lambda = 0
+\end{align*}
+Usando la formula general para encontrar $\lambda$ obtenemos $\lambda = 2\mu + 3 \pm [4\mu^2 + 1]^{1/2}$. Calculamos los limites
+\begin{align*}
+\lim_{\mu\rightarrow\infty} 2\mu + 3 + [4\mu^2 + 1]^{1/2} &= \infty\\
+\lim_{\mu\rightarrow\infty} 2\mu + 3 - [4\mu^2 + 1]^{1/2} &= \infty - \infty\\
+\text{racionalizamos}\\
+\lim_{\mu\rightarrow\infty} 2\mu + 3 - [4\mu^2 + 1]^{1/2} &\frac{2\mu + 3 + [4\mu^2 + 1]^{1/2}}{2\mu + 3 + [4\mu^2 + 1]^{1/2}}\\
+\lim_{\mu\rightarrow\infty} \frac{(2\mu + 3)^2 - [4\mu^2 + 1]}{2\mu + 3 + [4\mu^2 + 1]^{1/2}}\\
+\lim_{\mu\rightarrow\infty} \frac{4\mu^2 + 12\mu +9 - 4\mu^2 - 1}{2\mu + 3 + [4\mu^2 + 1]^{1/2}}\\
+\lim_{\mu\rightarrow\infty} \frac{12\mu +8}{2\mu + 3 + [4\mu^2 + 1]^{1/2}}\\
+\text{ multiplicamos por} \frac{1/\mu}{1/\mu}\\
+\lim_{\mu\rightarrow\infty} \frac{12 +8/\mu}{2 + 3/\mu + [4 + 1/\mu^2]^{1/2}}\\
+&= \frac{12}{2+\sqrt{4}} = \frac{12}{4}= 3
+\end{align*}
+Con esto podemos calcular el condicionamiento del Hessiano $K_2 = \infty/3$ por lo cual podemos concluir que se mal condiciona cuando $\mu \rightarrow \infty$
+
+\section*{Lagrangiano Aumentado}
+
+Tenemos el problema
+
+\begin{align*}
+\min_{\boldsymbol{x}}&\quad 3x_1^2 + x_2^2\\
+\text{ sujeto a }&\quad x_1+2x_2 - 1 \leq 0
+\end{align*}
+
+La función
+$$L_A(\boldsymbol{x}, \lambda, \mu) = 3x_1^2 + x_2^2 - \lambda(x_1+2x_2 - 1) + \frac{\mu}{2}(x_1+2x_2 - 1)^2$$
+
+$x_1 = \frac{mu + \lambda}{6+13\mu}$, $x_2 = \frac{6mu + 6\lambda}{6+13\mu}$ Cuando $\mu$ tiende a infinito
+
+$x_1 = \frac{1}{13}$ y $x_2 = \frac{6}{13}$. Y podemos obtener el valor de $\lambda = 6/13$
+
+\section*{Penalización Cuadrática Programado}
+
+Se programó el método de penalización cuadrática, y se usó el método de máximo descenso con paso backtracking para optimizar la función $q$ ,de esta forma no necesitamos el hessiano y podemos optimizar sólo con nuestra aproximación del gradiente.
+
+Obtenemos el resultado en cuatro iteraciones:
+
+x : (3.04411 4.02629 )   f:17.5802  h\_1 : -11.1849  h\_2 : -2.01782  h\_3 : 0.0704082 h\_4 : -3.33022
+
+\section*{Conclución}
+El método de penalización cuadrática nos permite resolver problemas con restricciones usando una nueva función objetivo, la cual podemos resolver con métodos que ya teníamos. Esto facilita la programación del método y sólo requiere hacer pequeños ajustes para que funcione con nuestro código previo.
+\newpage
+
+\end{multicols}
+\end{document}

@@ -1,0 +1,147 @@
+\documentclass{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{multicol}
+\usepackage{algorithm}
+\usepackage{multirow}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{helvet}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table,xcdraw, svgnames]{xcolor}
+
+\usepackage{listings}
+
+\lstset{language=R,
+    basicstyle=\small\ttfamily,
+    stringstyle=\color{DarkGreen},
+    otherkeywords={0,1,2,3,4,5,6,7,8,9},
+    morekeywords={TRUE,FALSE},
+    deletekeywords={data,frame,length,as,character},
+    keywordstyle=\color{blue},
+    commentstyle=\color{DarkGreen},
+    xleftmargin=1cm,
+}
+\decimalpoint
+\graphicspath{ {./} }
+
+\title {Tarea 6, Reconocimiento de Patrones}
+  \author {Francisco Javier Peralta Ramírez}
+  \date{\vspace{-2ex}}
+
+\begin{document}
+\vspace{-2ex}
+\maketitle
+\begin{enumerate}
+
+\item Consideramos un problema de clasificación binaria $y \in \{-1, 1\}$. Se quiere construir un clasificadore de la forma 
+$$\hat{y}(x) = sign(f(x))$$
+donde $f$ minimiza la función de costo de $C = E(1 - Yf(X))^2$. Verifica que para la $f$ que minimiza esta función de costo $ \hat{y}(x) = sign(f(x))$ corresponde al Clasificador Bayesiano óptimo.
+\begin{align*}
+\min_f C &= E(1 - Yf(X))^2\\
+&= E_XE_{Y=y|X=x}(1 - Yf(x))^2
+\end{align*}
+Basta con minimizar para cada $x$
+\begin{align*}
+\min_f&\,  E_{Y=y|X=x}(1 - Yf(x))^2\\
+&= (1-f(x))^2P(Y=1 | X=x) + (1+f(x))^2P(Y=1|X=x)\\
+&= (1-f(x))^2P(Y=1 | X=x) + (1+f(x))^2(1-P(Y=1 | X=x))\\
+&= (1+f(x))^2 + P(Y=1 | X=x)[ (1-f(x))^2 - (1+f(x))^2 ]\\
+&= 1 + 2f(x) + f(x)^2 + P(Y=1 | X=x)[ -4f(x) ]\\
+&= 1 + 2f(x)[1 - P(Y=1 | X=x)] + f(x)^2
+\end{align*}
+Si nos limitamos a $-1 \leq f(x) \leq 1$ cuando $ P(Y=1 | X=x) > 1/2$ el valor $f(x)$ que minimiza será positivo por lo que tomamos $\hat{y}(x) = 1$, cuando $P(Y=1 | X=x) < 1/2$ tomamos $\hat{y}(x) = -1$. Lo cual equivale al Clasificador Bayesiano óptimo
+\begin{align*}
+P(Y=1 | X=x) > P(Y= -1 | X=x) &\rightarrow \hat{y}(x) = 1\\
+P(Y=1 | X=x) < P(Y= -1 | X=x) &\rightarrow \hat{y}(x) = -1\\
+\end{align*}
+
+\item Usamos SVM para clasificar dos tipos (clases) de textos.
+Leemos los documentos y creamos una matriz de frecuencias.
+\begin{lstlisting}
+library("tm")
+library("SnowballC")
+library("e1071")
+
+alldir=DirSource("./texts", encoding = "UTF-8", recursive=TRUE)
+news <- Corpus(alldir, readerControl=list(reader=readPlain,language="en"))
+dtm <- DocumentTermMatrix(news, control=list(removePunctuation=TRUE, 
+                        tolower=TRUE, stopwords=c("english"), stripWhitespace=TRUE, 
+                        minWordLength=2))
+d <- DocumentTermMatrix(news, list(dictionary=findFreqTerms(dtm, 50)))
+\end{lstlisting}
+Generamos las categorías usando los nombres de las carpetas padre de los arhivos, \emph{sci.med} y \emph{sci.space}.
+\begin{lstlisting}
+classvec <- vector()
+# codigo para categorias de 
+# https://github.com/chenmiao/Big_Data_Analytics_Web_Text
+for (filedir in alldir$filelist) {
+  classlabel=basename(dirname(filedir))
+  classvec=c(classvec,classlabel)
+}
+classvec <- factor(classvec)
+\end{lstlisting}
+Separamos los datos en un conjunto de entrenamiento y de prueba
+\begin{lstlisting}
+#separar conjunto de pruebas
+rand_idxs <- sample(nrow(d))
+n_test = floor(nrow(d) * 0.75)
+
+train <- d[head(rand_idxs, n=n_test), ]
+test <- d[tail(rand_idxs, n=(nrow(d)-n_test)), ]
+
+train_class <- classvec[head(rand_idxs, n=n_test)]
+test_class <-classvec[tail(rand_idxs, n=(nrow(d)-n_test))]
+\end{lstlisting}
+Entrenamos el modelo y probamos
+\begin{lstlisting}
+svm_model <- svm(train, train_class, kernel="linear")
+
+pred <- predict(svm_model, test)
+table(pred,test_class)
+
+\end{lstlisting}
+
+Y obtuvimos los resultados:
+
+\begin{table}[H]
+\centering
+\label{my-label}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\multicolumn{2}{|l|}{\multirow{2}{*}{}} & \multicolumn{2}{c|}{classs} \\ \cline{3-4} 
+\multicolumn{2}{|l|}{} & sci.med & sci.space \\ \hline
+\multirow{1}{*}{ \parbox[t]{1mm}{\multirow{2}{*}{\rotatebox[origin=c]{90}{pred}}} } & sci.med & 244 & 19 \\ \cline{2-4} 
+ & sci.space & 8 & 224 \\ \hline
+\end{tabular}
+\end{table}
+
+\item Supongamos que tenemos los datos bidimensionales de clasificación binaria. Para la Figura 1 (a) es suficiente hacer una transformación polinomial de grado 2, i.e. es suficiente usar un kernel polinomial de grado 2
+
+\begin{center}
+\includegraphics[width=400px]{ej3.png}
+\end{center}
+
+¿De qué grado mínimo debe ser el kernel polinomial para los datos de la Figura 1(b) y de la Figura 1(c)?
+
+Para la 1(b), basta con una función polinomial de grado dos de la forma $4x^2 - y^2 + \alpha xy$ con un $\alpha$ grande, lo cual nos daría las curvas de nivel:
+
+\begin{center}
+\includegraphics[width=100px]{lvl2.png}
+\end{center}
+
+Para la 1(c), basta con una función polinomial de grado 6. es más dificil graficar una curva de nivel que cumpla con esto, pero el razonamiento es:
+
+En la diagonal más grande tenemos cuatro bloques de una categoría. Para que un polinomio que siempre sea positivo (o negativo) pase por ahí con ceros en los puntos de cruza, este necesitaría cinco cambios de direccion, por lo que el polinomio es de grado 6. Si se agregara otra fila y columna de este mismo modo, el polinomio sería de grado 8. 
+
+Otra forma de ver el grado del polinomio es contando los cambios de categorías sobre $x_1$ y $x_2$, el grado del polinomio será igual a la suma de los cambios en $x_1 + x_2$
+
+\end{enumerate}
+\end{document}

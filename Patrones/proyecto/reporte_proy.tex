@@ -1,0 +1,142 @@
+\documentclass{article}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{multicol}
+\usepackage{algorithm}
+\usepackage{multirow}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{helvet}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table,xcdraw, svgnames]{xcolor}
+
+\usepackage{listings}
+
+\lstset{language=R,
+    basicstyle=\small\ttfamily,
+    stringstyle=\color{DarkGreen},
+    otherkeywords={0,1,2,3,4,5,6,7,8,9},
+    morekeywords={TRUE,FALSE},
+    deletekeywords={data,frame,length,as,character},
+    keywordstyle=\color{blue},
+    commentstyle=\color{DarkGreen},
+    xleftmargin=1cm,
+}
+\decimalpoint
+\graphicspath{ {./} }
+
+\title {Tarea 7, Reconocimiento de Patrones}
+  \author {Francisco Javier Peralta Ramírez}
+  \date{\vspace{-2ex}}
+
+\begin{document}
+\vspace{-2ex}
+\maketitle
+
+\begin{enumerate}
+
+    \item Obtuvimos información de google maps usando la librería \emph{gmapdistance} de tal forma que pudiéramos ver la diferencia de tráfico de norte a sur en la ciudad de México a la hora de salida de trabajo. Para esto se tuvo que cosechar datos durante cuatro horas de 5pm a 9pm haciendo queries cada 10 minutos. Se tomaron diez puntos en el mapa de tal forma de que cinco estuvieran en la zona norte y los otros cinco en la zona sur de la ciudad.
+
+    Cada query regresa con veinticinco datos (la combinación de los cinco puntos norte con cinco sur), estos se pasan a un vector y se agregan a un data frame junto con el tiempo del query y su categoría $y\in\{-1, 1\}$ donde $-1$ corresponde \emph{norte a sur}. Un dato importante a considerar es el orden de la matriz que se obtiene al hacer un query, para que los tiempos correspondan a los mismos puntos, la matriz al hacer el query \emph{sur a norte} se transpuso.
+
+    Teniendo los datos, aplicamos PCA para ver cómo se comportan al reducir la dimensión de 26 a 2 y no muy sorprendentemente se comportan bien. Esto se debe a que claramente la cantidad de tráfico no es igual en ambas direcciones.
+    \begin{center}
+    \includegraphics[width=200px]{pca_1.png}
+    \end{center}
+
+    Como se puede observar, al aplicar PCA los datos son claramente linealmente separables por lo que decidimos usar una SVM con kernel lineal para clasificar. El modelo converge con doce vectores de soporte, el cual es algo alto considerando que sólo tenemos 52 datos.
+
+    \item Tomando los datos de un estudio de aire en Noruega, para determinar la calidad del aire y ver si la contaminación no rebasa $50 \mu g/m^3$, creamos múltiples modelos regresión logística y redes neuronales para comprar su desempeño.
+
+    Tomamos las funciones dadas por
+
+    \begin{lstlisting}
+        f1 <- "highpm10 ~ cars+temp2m+winddirection+time"
+        f2 <- "highpm10 ~ cars+temp2m"
+        f3 <- "highpm10 ~ cars*temp2m"
+    \end{lstlisting}
+
+    Obtenemos los resultados:
+    \begin{table}[H]
+    \centering
+    \label{ej2}
+    \begin{tabular}{lll}
+    \multirow{2}{*}{} & \multicolumn{2}{l}{Correcto} \\
+                      & Reg-Log        & N-Net       \\
+    f1                & 0.752          &  0.752     \\
+    f2                & 0.744          &  0.752\\
+    f3                & 0.736          &  0.744
+    \end{tabular}
+    \end{table}
+
+    Cuando se corrieron las pruebas múltiples veces los resultados tienen a ser similares, por lo que no podemos decir que un método tiene mejor desempeño que el otro. Cabe notar que la red neuronal puede converger en diferentes puntos, y no siempre tener el mejor desempeño posible.
+
+    \item Extendiendo el ejercicio de la tarea 7, ahora usamos un modelo de regresión logística para clasificar los correos como \emph{SPAM} o \emph{no SPAM} y se compararon los resultados con \emph{boostig} y \emph{random forests}.
+
+    En este caso tomamos un modelo completo es decir $f = x_1 + x_2 + \cdots + x_n$ ya que hacer combinaciones de todos los modelos posibles sería muy pesado.
+
+    \begin{table}[H]
+    \centering
+    \caption{Random Forest}
+    \label{rforest}
+    \begin{tabular}{|l|l|l|l|}
+    \hline
+    \multicolumn{2}{|l|}{\multirow{2}{*}{}} & \multicolumn{2}{c|}{classs} \\ \cline{3-4} 
+    \multicolumn{2}{|l|}{} & 0 & 1 \\ \hline
+    \multirow{1}{*}{ \parbox[t]{1mm}{\multirow{2}{*}{\rotatebox[origin=c]{90}{pred}}} } & 0 & 695 & 153 \\ \cline{2-4} & 1 & 9 & 294 \\ \hline
+    \end{tabular}
+    \end{table}
+
+    \begin{table}[H]
+    \centering
+    \caption{Boosting}
+    \label{boost}
+    \begin{tabular}{|l|l|l|l|}
+    \hline
+    \multicolumn{2}{|l|}{\multirow{2}{*}{}} & \multicolumn{2}{c|}{classs} \\ \cline{3-4} 
+    \multicolumn{2}{|l|}{} & 0 & 1 \\ \hline
+    \multirow{1}{*}{ \parbox[t]{1mm}{\multirow{2}{*}{\rotatebox[origin=c]{90}{pred}}} } & 0 & 679 & 26 \\ \cline{2-4} & 1 & 25 & 421 \\ \hline
+    \end{tabular}
+    \end{table}
+
+    \begin{table}[H]
+    \centering
+    \caption{Regresión Logística}
+    \label{logreg}
+    \begin{tabular}{|l|l|l|l|}
+    \hline
+    \multicolumn{2}{|l|}{\multirow{2}{*}{}} & \multicolumn{2}{c|}{classs} \\ \cline{3-4} 
+    \multicolumn{2}{|l|}{} & 0 & 1 \\ \hline
+    \multirow{1}{*}{ \parbox[t]{1mm}{\multirow{2}{*}{\rotatebox[origin=c]{90}{pred}}} } & 0 & 667 & 56 \\ \cline{2-4} & 1 & 37 & 391 \\ \hline
+    \end{tabular}
+    \end{table}
+
+    Podemos ver que Random forest es el que mejor clasifica el correo no spam, pero es el que más spam deja pasar, por otra parte lo contrario pasa con boosting, y como es de esperar regresión logística es un punto intermedio. Podríamos modificar el porcentaje de ``aceptación'' para dejar pasar más SPAM y rechazar menos correo bueno, haciendo el modelo de regresión logística bastante usable.
+
+    \item Usando datos de un estudio sobre la relación entre tomar la medicina AZT, la raza del paciente y mostrar síntomas de SIDA, buscamos un modelo re regresión logística adecuado que relaciona la probabilidad de mostar síntomas de SIDA con taomar AZT y la raza.
+
+    \begin{center}
+    \includegraphics[width=200px]{azt.png}
+    \end{center}
+
+    Generamos todos los modelos posibles 
+
+    \begin{lstlisting}
+        f1 <- "cbind(Y, N) ~ Race + AZT"
+        f2 <- "cbind(Y, N) ~ Race * AZT"
+        f3 <- "cbind(Y, N) ~ Race"
+        f4 <- "cbind(Y, N) ~ AZT"
+    \end{lstlisting}
+
+
+    haciendo uso de la función \emph{summary} notamos que \emph{azt} siempre es significativo. También podemos ver que por el ``Residual deviance'' el modelo que sólo toma en cuenta AZT es el mejor.% Dado que el ``intercept'' tiene más peso, es dificil decir si el uso de AZT en verdad 
+
+\end{enumerate}
+\end{document}

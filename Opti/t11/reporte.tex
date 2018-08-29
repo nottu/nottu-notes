@@ -1,0 +1,155 @@
+\documentclass{article}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{listings}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{multicol}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{helvet}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage{enumitem}
+
+\decimalpoint
+\graphicspath{ {./} }
+
+\title {Optimización Tarea 11}
+  \author {Francisco Javier Peralta Ramírez}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+  En está tarea se resuelven algunos problemas de optimización con retricciones usando el método de multiplicadores de Lagrange y se resuelve un problema de mínimos cuadrados no lineales usando Levenberg-Marquardt con un Jacobiano aproximado por diferencias finitas.
+\end{abstract}
+\begin{multicols}{2}
+
+\section{Introducción}
+
+El método de multiplicadores de Lagrange consite en formar una equación $\mathcal{L}(\boldsymbol{x}, \boldsymbol{\lambda}) = f(\boldsymbol{x}) - \boldsymbol{\lambda}^\intercal \boldsymbol{g}(\boldsymbol{x})$, donde $f(\boldsymbol{x})$ es nuestra función objetivo y $\boldsymbol{g}(\boldsymbol{x})$ es un vector de funciones de restricciones. Teniendo esto encontramos la solución a $\nabla \mathcal{L}(\boldsymbol{x}, \boldsymbol{\lambda}) = \boldsymbol{0}$. La idea de esto es encontrar los puntos donde las lineas de contorno de la función objetivo y sus restricciones son tangentes o visto de otra forma donde sus gradientes son paralelos.
+
+Para el Jacobiano aproximado hacemos uso de la aproziamción de la derivada por diferencias finitas, donde $f'(x) \approx \frac{f(x+h) - f(x)}{h}$ con lo que $\frac{\partial f(\boldsymbol{x})}{\partial x_i} \approx \frac{ f(\boldsymbol{x} + h\boldsymbol{e_i}) - f(\boldsymbol{x}) }{h}$ donde $\boldsymbol{e_i}$ es el i-ésimo vector canónico.
+
+% \newpage
+\section{Multiplicadores de Lagrange}
+
+\begin{enumerate}%[rightmargin=0.5cm]
+  \item La temperatura sobre el elipsoide $4x^2 + y^2 + 4z^2 = 16$ está dada por $T(x, y, z) =8x^2 + 4yz - 16z + 600$. Encuentre el punto más caliente sobre el elipsoide.
+  \begin{align*}
+  \mathcal{L}(\boldsymbol{x}, \boldsymbol{\lambda}) &= T(\boldsymbol{x}) - \boldsymbol{\lambda}^\intercal \boldsymbol{g}(\boldsymbol{x})\\
+  \mathcal{L}(x, y, z, \lambda_1) &= 8x^2 + 4yz - 16z + 600 \\&- \lambda_1(4x^2 + y^2 + 4z^2 - 16)\\
+  \frac{\partial\mathcal{L}}{\partial \lambda_1} &= 4x^2 + y^2 + 4z^2 - 16\\
+  \frac{\partial\mathcal{L}}{\partial x} &= 16x - \lambda_1 8x     \\
+  \frac{\partial\mathcal{L}}{\partial y} &= 4z - \lambda_1 2y      \\
+  \frac{\partial\mathcal{L}}{\partial z} &= 4y - 16 - \lambda_1 8z \\
+  \end{align*}
+  Resolvemos el sistema de equaciones obtenido al igualar las derivadas parciales de $\mathcal{L}$ a $0$.
+
+  Con $\frac{\partial\mathcal{L}}{\partial x} = 0$ tenemos que $x = 0$ ó $\lambda_1 = 2$.
+
+  Tomando $ x = 0 $
+  \begin{align*}
+  y^2 + 4z^2 - 16&= 0\\
+  4z - \lambda_1 2y &= 0 \rightarrow \lambda_1 = 2\frac{z}{y}\\
+  4y - 16 - \lambda_1 8z &=0 \rightarrow y = \lambda_1 2z + 4\\
+  \rightarrow y &= 4\frac{z^2}{y} - 4\\
+  y^2 &= 4z^2 - 4y \rightarrow 4z^2 = y^2 + 4y\\
+  y^2 + y^2 + 4y -8&= 2(y^2 + 2y -8) = 0\\
+  2(y-2)(y+4) &= 0
+  \end{align*}
+  Con lo que tenemos que $y = 2$ ó $y = -4$. Tomando $y = 2$
+  \begin{align*}
+  4 + 4z^2 - 16 &= 0\\
+  z^2 &= 3\\
+  z &= \pm \sqrt{3}
+  \end{align*}
+  Lo que nos da los puntos $(0, 2, \sqrt{3})$, $(0, 2, -\sqrt{3})$. Evaluando $f(0, 2, \sqrt{3}) = 8\sqrt{3} - 16\sqrt{3} + 600 \approx 586.143$ y  $f(0, 2, -\sqrt{3}) = -8\sqrt{3} + 16\sqrt{3} + 600 \approx 613.856$
+
+  Tomando $y = -4$
+  \begin{align*}
+  16 - 4z^2 - 16 &= 0\\
+  4z^2 &= 0\\
+  z &= 0\\
+  \end{align*}
+  Lo que nos da el punto $(0, 2, 0)$ evaluando $f(0, -4, 0) = 600$
+
+  Sí $\lambda = 2$
+  \begin{align*}
+  4z - 4y &= 0 \rightarrow z = y\\
+  4z - 16 - 16z &= 0\\
+  12z &= -16 \rightarrow z = -4/3 = y\\
+  4x^2 + 5(\frac{-4}{3})^2  &= 16\\
+  4(x^2 + \frac{20}{9} - 4) &= 0\\
+  x^2 &= 36/9 - 20/9 = 16/9\\
+  x &= \pm 4/3
+  \end{align*}
+  Lo que nos da los punto $(4/3, -4/3, -4/3)$, $(-4/3, -4/3, -4/3)$ evaluando $f(4/3, -4/3, -4/3) = 1928/3 \approx 642.667$ y $f(-4/3, -4/3, -4/3) = 1928/3 \approx 642.667$. Por lo que tenemos mínimos en $(4/3, -4/3, -4/3)$, $(-4/3, -4/3, -4/3)$
+
+
+\item Encuentre el valor máximo de la función $f(x, y, z) = xyz$ cuando el punto $(x, y, z)$ está sobre los planos $x + y + z = 40$ y $x + y = z$
+\begin{align*}
+\mathcal{L}(\boldsymbol{x}, \boldsymbol{\lambda}) &= f(\boldsymbol{x}) - \boldsymbol{\lambda}^\intercal \boldsymbol{g}(\boldsymbol{x})\\
+\mathcal{L}(\boldsymbol{x}, \boldsymbol{\lambda}) &= xyz -\lambda_1(x + y + z - 40) - \lambda_2(x + y - z)\\
+\frac{\partial\mathcal{L}}{\partial \lambda_1} &= x+y+z-40\\
+\frac{\partial\mathcal{L}}{\partial \lambda_2} &= x+y-z\\
+\frac{\partial\mathcal{L}}{\partial x} &= yz-\lambda_1-\lambda_2\\
+\frac{\partial\mathcal{L}}{\partial y} &= xz-\lambda_1-\lambda_2\\
+\frac{\partial\mathcal{L}}{\partial z} &= xy-\lambda_1+\lambda_2\\
+\end{align*}
+Tomando $\frac{\partial\mathcal{L}}{\partial \lambda_1}$ y $\frac{\partial\mathcal{L}}{\partial \lambda_2}$ tenemos que $2z = 40$, $z = 20$ y con $\frac{\partial\mathcal{L}}{\partial x}$ y $\frac{\partial\mathcal{L}}{\partial y}$ tenemos $20y -20z = 0$ por lo que $x=y=10$
+
+Evaluando en el punto $(10, 10, 20)$, $f(10, 10, 20) = 2000$.
+
+\item Encuentre el valor máximo de la función $f(x, y, z) = x^2 + 2y - z^2$ sujeto a las restricciones $2x - y = 0$ y $y + z = 0$.
+\begin{align*}
+\mathcal{L}(\boldsymbol{x}, \boldsymbol{\lambda}) &= f(\boldsymbol{x}) - \boldsymbol{\lambda}^\intercal \boldsymbol{g}(\boldsymbol{x})\\
+\mathcal{L}(\boldsymbol{x}, \boldsymbol{\lambda}) &= x^2+2y-z^2 -\lambda_1(2x-y) - \lambda_2(y+z)\\
+\frac{\partial\mathcal{L}}{\partial \lambda_1} &= 2x-y\\
+\frac{\partial\mathcal{L}}{\partial \lambda_2} &= y+z\\
+\frac{\partial\mathcal{L}}{\partial x} &= 2x-2\lambda_1\\
+\frac{\partial\mathcal{L}}{\partial y} &= 2+\lambda_1-\lambda_2\\
+\frac{\partial\mathcal{L}}{\partial z} &= -2z-\lambda_2\\
+\end{align*}
+De lo que obtenemos las siguientes igualdades
+\begin{align*}
+y &=2x\\
+y &=-z\\
+x &=\lambda_1\\
+\lambda_2 &= -2z\\
+\end{align*}
+Remplazando en $\frac{\partial\mathcal{L}}{\partial y}$ obtenemos
+\begin{align*}
+2+\lambda_1 - \lambda_2 &= 0\\
+2+x + 2z &= 0\\
+2+x - 2y &= 0\\
+2+x - 4x &= 0\\
+3x &= 2\\
+x &= 2/3
+y &= 4/3
+z &= -4/3
+\end{align*}
+Evaluando en el punto $f(2/3, 4/3, -4/3) = 4/3$
+\end{enumerate}
+
+\section{Jacobiano Aproximado}
+
+Evaluando con el Jacobiano aproximado podemos ver las diferencias de usar incrementos diferentes.
+
+Para $\nu = 1.25$ y $h = 0.01$ el método converge en 834 iteraciones practicamente a la misma solución que con el Jacobiano analítico, mientras que con $h = 0.1$ el método no logra converger.
+
+\section{Conclución}
+
+El método de los multiplicadores de Lagrange nos permite resolver problemas de optimización con restricciones encontrando el mínimo de una nueva función (Lagrangiana). Este nuevo problema podríamos resolverlo con métodos que ya hemos usado.
+
+En el caso de el Jacobiano aproximado, podemos ver que una aproximación no muy fina puede traer problemas a nuestro algoritmo de optimización.
+\newpage
+
+\end{multicols}
+\end{document}

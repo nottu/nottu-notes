@@ -1,0 +1,213 @@
+\documentclass{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{listings}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{multicol}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{helvet}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table,xcdraw]{xcolor}
+\decimalpoint
+\graphicspath{ {./} }
+
+\title {Optimización Tarea 8}
+  \author {Francisco Javier Peralta Ramírez}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+  En está tarea se implementan dos métodos para resolver sistemas de ecuaciones no lineales. El primer método es el de Newton y el segundo el de Broyden. Se probaron ambos métodos para la misma función, para la cual se proporcina el \emph{Jacobiano} y se muestran sus resultados.
+\end{abstract}
+\begin{multicols}{2}
+
+\section{Introducción}
+
+Representamos nuestro sistema de ecuaciones no lineales como una función $F : \mathbb{R}^n \rightarrow \mathbb{R}^n$ y su función Jacobiana $J : \mathbb{R}^n \rightarrow \mathbb{R}^{n\times n}$.
+
+La función $F$ está dada por:
+\begin{align*} 
+F(\boldsymbol{x}) &= (f_1(\boldsymbol{x}), f_2(\boldsymbol{x}), f_3(\boldsymbol{x}))^T\\
+f_1(\boldsymbol{x}) &= 3 x_1 - \cos(x_2x_3) - 0.5\\
+f_2(\boldsymbol{x}) &= x^2_1 - 81(x_2 + 0.1)^2 + \sin(x_3) + 1.06\\
+f_3(\boldsymbol{x}) &= \exp(-x_1x_2) + 20x_3 +\frac{10\pi - 3}{3} \\
+\end{align*}
+
+Y la función Jacobiano por 
+\begin{align*}
+J(\boldsymbol{x}) &= (\nabla f_1(\boldsymbol{x}), \nabla f_2(\boldsymbol{x}), \nabla f_3(\boldsymbol{x}))^T\\
+\nabla f_1(\boldsymbol{x}) &= \begin{pmatrix}
+    3 \\
+    x_3\sin(x_2x_3)\\
+    x_2\sin(x_2x_3)\\
+   \end{pmatrix}\\
+\nabla f_2(\boldsymbol{x}) &= \begin{pmatrix}
+    2x_1 \\
+    -162(x_2 + 0.1)\\
+    \cos(x_3)\\
+   \end{pmatrix}\\
+\nabla f_3(\boldsymbol{x}) &= \begin{pmatrix}
+    -x_2\exp(-x_1x_2)\\
+    -x_1\exp(-x_1x_2)\\
+    20\\
+   \end{pmatrix}\\
+% J(\boldsymbol{x}) &= \begin{pmatrix}
+%     3 && x_3\sin(x_2x_3) && x_2\sin(x_2x_3)\\
+%     2x_1 && -162(x_2 + 0.1) && \cos(x_3)\\
+%     -x_2\exp(-x_1x_2) && -x_1\exp(-x_1x_2) && 20\\
+% \end{pmatrix}\\
+\end{align*}
+Se probará con cuatro diferentes puntos iniciales:
+\begin{align*}
+&(0, 0 , 0)^T\\
+&(1.1, 1.1 , -1.1)^T\\
+&(-10, -10 , 10)^T\\
+&(3, -3 , 3)^T\\
+\end{align*}
+
+\section{Método de Newton}
+
+El método de consiste en resolver el sistema de equaciones dado por $J(x_k)p_k = -F(x_k)$ donde $J(\cdot)$ es el Jacobiano de la función y $F(\cdot)$ es la evaluación de la función. De esta forma obtenemos un \emph{paso} $p_k$ con el que actualizamos nuestra última solución, de modo que $x_{k+1} = x_k + p_k$. Esté método se puede resumir en
+
+\begin{algorithm}[H]
+\caption{Newton no Lienal}\label{newton}
+\begin{algorithmic}[1]
+\Function{newton\_noLineal}{x, F, J, t}
+  \While{$||F(x)|| > t$}
+    \State J(x)p := -F(x)
+    \State x := x + p
+  \EndWhile
+  \State\textbf{return} x
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Resultados}
+
+A continuación se muestran los resultados de las corridas con los cuatro puntos iniciales.
+
+\includegraphics[width=0.4\textwidth]{res_newton.png}
+
+Como podemos ver en todos los casos converge de manera rápida.
+
+En la siguiente tabla vemos los resultados de la última iteración con la que se cumple el criterio de convergencia.
+
+\begin{table}[H]
+\footnotesize
+\centering
+\label{my-label}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+Punto Inicial      & K & $\boldsymbol{x_k}$    & $|\nabla f(\boldsymbol{x_k})|$ & $K(J(\boldsymbol{x_k}))$ \\ \hline
+$(0,0,0)^T$        & 5 &  $(0.5,0, -0.523)^T$ & 1.8E-15        &   6.66                     \\ \hline
+$(1.1,1.1,-1.1)^T$ & 7 &  $(0.5,0, -0.523)^T$ & 1.6E-9        &    6.66                  \\ \hline
+$(-10, -10 , 10)^T$& 10&  $(0.5,0, -0.529)^T$ & 2.7E-12        &   6.66                  \\ \hline
+$(3, -3 , 3)^T$    & 11&  $(0.5,0, -0.524)^T$ & 5.3E-9       &     6.66                 \\ \hline
+\end{tabular}
+\end{table}
+
+
+\section{Método de Broyden}
+
+El método de Broyden es muy similar al de Newton, pero este no necesita calcular la matriz Jacobiana en cada iteración. Se parte de una matriz Jacobiana calculada para el primer prunto $x_0$ y luego se va actualizando usando el método de la secante, donde $\nabla f(x_k) \approx [f(x_k) - f(x_{k-1})]/ (x_k - x_{k-1})$
+
+De esta forma obtenemos el algirtmo
+\begin{algorithm}[H]
+\caption{Boryden}\label{broydel}
+\begin{algorithmic}[1]
+\Function{broydel}{$x_0$, F, A, t}
+  \State k = 0
+  \While{$||F(x)|| > t$}
+    \State $A_kp_k$ := $-F(x_k)$
+    \State $x_{k+1}$ := $x_k + p_k$
+    \State $y_k$ := $F(x_{k+1}) - F(x_k)$
+    \State $A_k$ := $A_k + \frac{y_k - A_k p_k}{p_k^Tp_k}p_k^T$
+    \State k := k + 1
+  \EndWhile
+  \State\textbf{return} x
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Al utilizar una aproximación en lugar de la Jacobiana tenemos mayor libertad al no depender de una función para calcular continuamente esta matriz, pero a cambio tomamos un camino menos directo a la solución ya que la aproximación pude ser mala.
+
+\subsection{Resultados}
+
+A continuación se muestran los resultados de las corridas con los cuatro puntos iniciales.
+
+\includegraphics[width=0.4\textwidth]{res_broydel.png}
+
+En todos los casos el algoritmo tarda más en converger que Newton, y en el último caso este ni siquiera logra converger, esto se debe a que el condicionamiento de la matriz crece mucho.
+
+\begin{table}[H]
+\footnotesize
+\centering
+\label{broyden}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+Punto Inicial      & K & $\boldsymbol{x_k}$    & $|\nabla f(\boldsymbol{x_k})|$ & $K(J(\boldsymbol{x_k}))$ \\ \hline
+$(0,0,0)^T$        & 6 &  $(0.5, 0, -0.524)^T$ & 7.0E-13        &   6.66                     \\ \hline
+$(1.1,1.1,-1.1)^T$ & 14&  $(0.5, 0, -0.524)^T$ & 1.2E-9        &    2.55                  \\ \hline
+$(-10, -10 , 10)^T$& 30&  $(0.5, 0, -0.529)^T$ & 2.4E-10        &   17.91                  \\ \hline
+$(3, -3 , 3)^T$    &231 &  $(0.5, 0, -0.529)^T$ & 1608       &    5E96                 \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Conclución}
+
+Como era de esperarse, el método de Newton es mejor en todos los casos, esto se debe a que cuenta con más información en cada iteración, pero está información tiene un costo y puede haber casos en los que no se cuenta con una función para calcular el Jacobiano. Queda claro entonces que el método de Broyden es util cuando no contamos con el Jacobiano, pero de alguna manera tenemos el Jacobiano para el punto inicial. 
+
+Es importante notar que Borydel falla cuando la aproximación a la Jacobiana se mal condiciona, en el caso que no convergió el condicionamiento se dispara y nuestro algoritmo deja ya no logra bajar el número de condicionamiento de la matriz. Si pudieramos evitar el mal condicionamiento de la matriz de aproximación a la Jacobiana podríamos resolver el sistema aún en casos como el del punto $(3, -3 , 3)^T$.
+
+\section{Ejercicio 5}
+
+Dada la función $f : \mathbb{R}^n \rightarrow \mathbb{R}$ y el cambio de variable $\hat{\boldsymbol{x}} = \boldsymbol{T} \boldsymbol{x}$, definimos la función
+
+$$\hat{f}(\hat{\boldsymbol{x}}) = f(\boldsymbol{T}^{-1} \hat{\boldsymbol{x}})$$
+
+Usando la regla de la cadena, pruebe que
+
+$$ \nabla^2 \hat{f}(\hat{\boldsymbol{x}}) = \boldsymbol{T}^{-T} \nabla^2f(\boldsymbol{x}) \boldsymbol{T}^{-1} $$
+
+Iniciamos calculando $\nabla \hat{f}(\hat{\boldsymbol{x}})$
+\begin{align}
+  \frac{\partial \hat{f}(\hat{\boldsymbol{x}})}{\partial \hat{x}_i} & = \sum_{j=1}^{n}\frac{\partial f}{\partial x_j}\frac{\partial x_j}{\partial \hat{x}_i}
+\end{align}
+Por definición tenemos que
+\begin{align}
+  x_i &= \sum_{j=1}^{n}T^{-1}_{i,j}\hat{x}_j\\
+  \frac{\partial x_i}{\partial \hat{x}_j} &= T^{-1}_{i,j}
+\end{align}
+Substituyedo (3) en (1), obtenemos
+\begin{align}
+  \frac{\partial \hat{f}(\hat{\boldsymbol{x}})}{\partial \hat{x}_i} & = \sum_{j=1}^{n}\frac{\partial f}{\partial x_j} T^{-1}_{j,i}
+\end{align}
+O de manera equivalente 
+
+\begin{align}
+  \frac{\partial \hat{f}(\hat{\boldsymbol{x}})}{\partial \hat{x}_i} & = \sum_{j=1}^{n}T^{-T}_{i,j}\frac{\partial f}{\partial x_j}\\
+  \nabla \hat{f}(\hat{\boldsymbol{x}}) &= T^{-T}\nabla {f}(\boldsymbol{x})
+\end{align}
+
+Para $\nabla^2 \hat{f}(\hat{\boldsymbol{x}})$
+
+\begin{align*}
+  \frac{\partial^2 \hat{f}(\hat{\boldsymbol{x}})}{\partial \hat{x}_j \partial \hat{x}_i} & = \frac{\partial}{\partial\hat{x}_j} \left[\sum_{k=1}^{n}\frac{\partial f}{\partial x_k}\frac{\partial x_k}{\partial \hat{x}_i}\right]\\
+  & = \sum_{k=1}^{n} \left[\sum_{l=1}^{n}\frac{\partial^2 f}{\partial x_l}\frac{\partial x_l}{\partial \hat{x}_j}\right]\frac{\partial x_k}{\partial \hat{x}_i}\\
+  & = \sum_{k=1}^{n} \left[\sum_{l=1}^{n}\frac{\partial^2 f}{\partial x_l}T^{-1}_{l, j}\right]T^{-1}_{k, i}\\
+  & = \sum_{k=1}^{n} T^{-T}_{i, j}\left[\sum_{l=1}^{n}\frac{\partial^2 f}{\partial x_l}T^{-1}_{l, j}\right]\\
+  & = \sum_{k=1}^{n} T^{-T}_{i, j} \nabla^2 f(\boldsymbol{x}) T^{-1}\\
+  & = T^{-T} \nabla^2 f(\boldsymbol{x}) T^{-1}
+\end{align*}
+
+
+\end{multicols}
+\end{document}
